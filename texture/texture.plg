@@ -1,0 +1,37 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: texture - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\root\LOCALS~1\Temp\RSP3F.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /I "c:\program files\opencv\cv\include" /I "c:\program files\opencv\cvaux\include" /I "C:\Program Files\OpenCV\otherlibs\highgui" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/texture.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"C:\Documents and Settings\root\Desktop\texture\main.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\root\LOCALS~1\Temp\RSP3F.tmp" 
+Creating temporary file "C:\DOCUME~1\root\LOCALS~1\Temp\RSP40.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib cvd.lib cvauxd.lib highguid.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/texture.pdb" /debug /machine:I386 /out:"Debug/texture.exe" /pdbtype:sept /libpath:"C:\Program Files\OpenCV\lib" 
+".\Debug\main.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\root\LOCALS~1\Temp\RSP40.tmp"
+<h3>Output Window</h3>
+Compiling...
+main.cpp
+C:\Documents and Settings\root\Desktop\texture\main.cpp(322) : warning C4101: 'tmpMap' : unreferenced local variable
+C:\Documents and Settings\root\Desktop\texture\main.cpp(322) : warning C4101: 'rectMap' : unreferenced local variable
+C:\Documents and Settings\root\Desktop\texture\main.cpp(1009) : warning C4101: 'tempPoint' : unreferenced local variable
+C:\Documents and Settings\root\Desktop\texture\main.cpp(998) : warning C4101: 't' : unreferenced local variable
+C:\Documents and Settings\root\Desktop\texture\main.cpp(1012) : warning C4101: 'currPoint' : unreferenced local variable
+Linking...
+
+
+
+<h3>Results</h3>
+texture.exe - 0 error(s), 5 warning(s)
+</pre>
+</body>
+</html>
