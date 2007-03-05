@@ -4,14 +4,15 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	LDFLAGS	:=	-lGL -lGLU -lglut -shared -D_UNIX -fPIC
 	CFLAGS	:=	
 	JDK		:=	/usr/lib/jvm/java-1.5.0-sun
+	JAVAGL	:= JavaGL.so
 else ifneq (,$(findstring CYGWIN,$(UNAME)))
 	LDFLAGS	:=	-lopengl32 -lglu32 -lglut32 
 	CFLAGS	:=	-g -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
+	JAVAGL	:= JavaGL.dll
 endif
 
-cygwin: JavaGL.dll smt.class
-linux: JavaGL.so smt.class
+all: $(JAVAGL) smt.class
 
 JavaGL.dll: JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o
 	gcc $(CFLAGS) -I$(JDK)/include -I$(JDK)/include/win32  -Wl,--add-stdcall-alias -shared -o JavaGL.dll JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o $(LDFLAGS) -lstdc++
