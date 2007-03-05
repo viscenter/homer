@@ -1,0 +1,13 @@
+# Microsoft Developer Studio Generated Dependency File, included by texture.mak
+
+.\main.cpp : \
+	"..\..\..\..\program files\microsoft visual studio\vc98\include\basetsd.h"\
+	"..\..\..\..\program files\opencv\cv\include\cv.h"\
+	"..\..\..\..\program files\opencv\cv\include\cvcompat.h"\
+	"..\..\..\..\program files\opencv\cv\include\cverror.h"\
+	"..\..\..\..\program files\opencv\cv\include\cvtypes.h"\
+	"..\..\..\..\program files\opencv\cvaux\include\cvaux.h"\
+	"..\..\..\..\program files\opencv\cvaux\include\cvaux.hpp"\
+	"..\..\..\..\program files\opencv\cvaux\include\cvmat.hpp"\
+	"..\..\..\..\program files\opencv\otherlibs\highgui\highgui.h"\
+	
