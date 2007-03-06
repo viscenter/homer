@@ -147,9 +147,9 @@ bool manuModel::readMesh(char *filename)
 				verList[i].v1 = v;
 			}
 			
-			verList[i].x = z;
+			verList[i].x = x;
 			verList[i].y = y;
-			verList[i].z = x;
+			verList[i].z = z;
 			
 		}
 		if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
