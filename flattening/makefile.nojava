@@ -1,5 +1,5 @@
 smt: smt.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o
-	gcc -g -o smt smt.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o -L/usr/local/lib -lglut32 -lGLU32 -lopengl32 -lstdc++ -lm -ljpeg
+	gcc -g -o smt smt.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o -L/usr/local/lib -lglut -lGLU -lstdc++ -lm -ljpeg
 
 Skeleton.o: Skeleton.cpp
 	gcc -g -c Skeleton.cpp
