@@ -2,7 +2,7 @@
 
 %.o: %.cpp
 	@echo $(notdir $<)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -MMD -MP -MF $(DEPSDIR)/$*.d $(CXXFLAGS) -c $< -o $@
 
 %.class: %.java
 	@echo $(notdir $<)
@@ -24,8 +24,8 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	JDK		:=	/usr/lib/jvm/java-1.5.0-sun
 	JAVAGL	:= JavaGL.so
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
+endif
 # Cygwin-specific flags
-else 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	LIBS	:=	-lopengl32 -lglu32 -lglut32 -lstdc++
 	LDFLAGS	:=	-Wl,--add-stdcall-alias -shared
@@ -33,17 +33,28 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
-else
+endif
+# Mac-specific flags
 ifneq (,$(findstring Darwin,$(UNAME)))
 	LIBS	:=	-lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
 endif
-endif
-endif
+
+BUILD	:=	build
 
 BACKENDSOURCES	:=	source/backend
 SMTSOURCES		:=	source/smt
 SMTJAVASOURCES	:=	source/smtjava
 INCLUDES		:=	$(BACKENDSOURCES) $(SMTSOURCES) $(SMTJAVASOURCES)
+
+CFLAGS		+= $(INCLUDE)
+CXXFLAGS	:= $(CFLAGS)
+JAVAFLAGS	:= -sourcepath $(SOURCEPATH)
+
+ifneq ($(BUILD),$(notdir $(CURDIR))) # not in build directory
+
+export JAVAGLBIN	:=	$(CURDIR)/$(JAVAGL)
+export SMTBIN	:=	$(CURDIR)/smt
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(SMTSOURCES),$(CURDIR)/$(dir)) \
@@ -64,24 +75,40 @@ export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
 export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
+export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
-CFLAGS		+= $(INCLUDE)
-CXXFLAGS	:= $(CFLAGS)
-JAVAFLAGS	:= -sourcepath $(SMTJAVASOURCES)
+.PHONY: $(BUILD) clean
 
-all: smt smtjava
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile
 
-smt: $(BACKENDOFILES) $(SMTOFILES)
-	$(LD) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
-
-.PHONY: smtjava
-smtjava: $(JAVAGL) smt.class
-
-$(JAVAGL): $(BACKENDOFILES) $(SMTJAVAOFILES)
-	$(LD) $(JAVAINCLUDE) $(LDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
+smt:
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile $(SMTBIN)
 
 clean:
 	rm -f smt
-	rm -f *.o
-	rm -f *.class
 	rm -f $(JAVAGL)
+	rm -rf $(BUILD)
+
+else # in build directory
+
+DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
+			$(SMTOFILES:.o=.d) \
+			$(SMTJAVAOFILES:.o=.d)
+
+all: $(SMTBIN) smtjava
+
+$(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
+	$(LD) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
+
+.PHONY: smtjava
+smtjava: $(JAVAGLBIN) smt.class
+
+$(JAVAGLBIN): $(BACKENDOFILES) $(SMTJAVAOFILES)
+	$(LD) $(JAVAINCLUDE) $(LDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
+
+-include $(DEPENDS)
+
+endif
