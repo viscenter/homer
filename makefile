@@ -25,13 +25,15 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	JAVAGL	:= JavaGL.so
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
 # Cygwin-specific flags
-else ifneq (,$(findstring CYGWIN,$(UNAME)))
+else 
+ifneq (,$(findstring CYGWIN,$(UNAME)))
 	LIBS	:=	-lopengl32 -lglu32 -lglut32 -lstdc++
 	LDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	:=	-g -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
+endif
 endif
 
 BACKENDSOURCES	:=	source/backend
