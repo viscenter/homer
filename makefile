@@ -33,6 +33,10 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
+else
+ifneq (,$(findstring Darwin,$(UNAME)))
+	LIBS	:=	-lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
+endif
 endif
 endif
 

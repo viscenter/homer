@@ -1,11 +1,19 @@
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+#endif
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+extern "C" {
 #include <jpeglib.h>
+}
 #include "smtss.h"
 
 unsigned char *flipdata( unsigned char *data, int width, int height )
