@@ -1,65 +1,81 @@
+.SUFFIXES:
+
+%.o: %.cpp
+	@echo $(notdir $<)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+%.class: %.java
+	@echo $(notdir $<)
+	$(JAVAC) $(JAVAFLAGS) $< -d .
+
+export CC		:=	gcc
+export CXX		:=	g++
+export JAVAC	:=	javac
+
 UNAME	:=	$(shell uname -s)
 
-ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS	:=	-lGL -lGLU -lglut -shared -D_UNIX -fPIC
-	CFLAGS	:=	
+# General *nix flags (will be overwritten for Cygwin)
+LIBS	:=	-lGL -lGLU -lglut -lstdc++ -lm -ljpeg
+LDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
+CFLAGS	:=	-g
+
+# Linux-specific flags
+ifneq (,$(findstring Linux,$(UNAME)))	
 	JDK		:=	/usr/lib/jvm/java-1.5.0-sun
 	JAVAGL	:= JavaGL.so
+	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
+# Cygwin-specific flags
 else ifneq (,$(findstring CYGWIN,$(UNAME)))
-	LDFLAGS	:=	-lopengl32 -lglu32 -lglut32 
+	LIBS	:=	-lopengl32 -lglu32 -lglut32 -lstdc++
+	LDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	:=	-g -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
+	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
 endif
 
-all: $(JAVAGL) smt.class
+BACKENDSOURCES	:=	source/backend
+SMTSOURCES		:=	source/smt
+SMTJAVASOURCES	:=	source/smtjava
+INCLUDES		:=	$(BACKENDSOURCES) $(SMTSOURCES) $(SMTJAVASOURCES)
 
-JavaGL.dll: JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o
-	gcc $(CFLAGS) -I$(JDK)/include -I$(JDK)/include/win32  -Wl,--add-stdcall-alias -shared -o JavaGL.dll JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o $(LDFLAGS) -lstdc++
+export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(SMTSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir))
 
-JavaGL.so: JavaGL.class Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o JavaGL.o smc.o
-	gcc -I$(JDK)/include -I$(JDK)/include/linux -Wl JavaGL.o Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o $(LDFLAGS) -o JavaGL.so
+BACKENDCPPFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SMTCPPFILES		:=	$(foreach dir,$(SMTSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SMTJAVACPPFILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 
-Skeleton.o: Skeleton.cpp
-	gcc $(CFLAGS) -c Skeleton.cpp
+SMTJAVAJAVAILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.java)))
 
-PhysEnv.o: PhysEnv.cpp
-	gcc $(CFLAGS) -c PhysEnv.cpp
+# Use CXX for linking
+export LD	:=	$(CXX)
 
-MathDefs.o: MathDefs.cpp
-	gcc $(CFLAGS) -c MathDefs.cpp
+export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o)
+export SMTOFILES		:=	$(SMTCPPFILES:.cpp=.o)
+export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
+export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
-manuModel.o: manuModel.cpp
-	gcc $(CFLAGS) -c manuModel.cpp
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 
-MButils.o: MButils.cpp
-	gcc $(CFLAGS) -c MButils.cpp
+CFLAGS		+= $(INCLUDE)
+CXXFLAGS	:= $(CFLAGS)
+JAVAFLAGS	:= -sourcepath $(SMTJAVASOURCES)
 
-MBbitmap.o: MBbitmap.cpp
-	gcc $(CFLAGS) -c MBbitmap.cpp
+all: smt smtjava
 
-smc.o: smc.cpp
-	gcc $(CFLAGS) -c smc.cpp
+smt: $(BACKENDOFILES) $(SMTOFILES)
+	$(LD) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
 
-JavaGL.o: JavaGL.cpp
-	g++ $(CFLAGS) -c JavaGL.cpp
+.PHONY: smtjava
+smtjava: $(JAVAGL) smt.class
 
-JavaGL.class: JavaGL.java
-	javac JavaGL.java
-
-CameraPanel.class: CameraPanel.java
-	javac CameraPanel.java
-
-DisplayPanel.class: DisplayPanel.java
-	javac DisplayPanel.java
-
-PropertiesPanel.class: PropertiesPanel.java
-	javac PropertiesPanel.java
-
-smt.class: smt.java JavaGL.class CameraPanel.class DisplayPanel.class PropertiesPanel.class
-	javac smt.java
+$(JAVAGL): $(BACKENDOFILES) $(SMTJAVAOFILES)
+	$(LD) $(JAVAINCLUDE) $(LDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
 
 clean:
+	rm -f smt
 	rm -f *.o
 	rm -f *.class
-	rm -f JavaGL.dll JavaGL.so
+	rm -f $(JAVAGL)
