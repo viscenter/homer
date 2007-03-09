@@ -77,7 +77,7 @@ export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
-.PHONY: $(BUILD) clean
+.PHONY: $(BUILD) smt clean
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
