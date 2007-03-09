@@ -439,7 +439,7 @@ void MouseRelease()
 	}
 }
 
-/*/
+/*
 GLvoid drawModel(t_Bone *curBone)
 {
 	if (curBone->visualCnt > 0 && curBone->visuals[0].vertexData != NULL)
@@ -464,7 +464,8 @@ GLvoid drawModel(t_Bone *curBone)
 				glDrawArrays(GL_QUADS,0,curBone->visuals[0].faceCnt * 4);
 		}
 	}
-}/*/
+}
+*/
 
 void NewSystem()
 {
@@ -587,7 +588,8 @@ void LoadFile( char file1[] )//,CString baseName,CString ext)
 	t_Visual *visual;
 	FILE	*fp;
 	
-/*/	ext.MakeUpper();
+/*
+	ext.MakeUpper();
 	if (ext == "OBJ")
 	{
 		visual = (t_Visual *)malloc(sizeof(t_Visual));
@@ -623,7 +625,8 @@ void LoadFile( char file1[] )//,CString baseName,CString ext)
 		}
 	}
 	else	// LOAD SIM SYSTEM
-	{/*/
+	{
+	*/
 		if( strlen(file1) ) //file1.GetLength() )
 		{
 			fp = fopen(file1,"rb");
@@ -853,7 +856,7 @@ manuSizeY = v;
 }
 
 
-/*/
+/*
 // MainFrm.cpp : Implementation of OpenGL Window of 3D Cloth Simulation
 
 void CMainFrame::OnFileOpen()
@@ -864,7 +867,7 @@ void CMainFrame::OnFileSave()
 	char szFilter[] = "DPS files (*.dps)|*.dps||";
 	m_OGLView.SaveFile(dialog.GetFileName( ),dialog.GetFileTitle( ));
 
-/*/
+*/
 
 int SaveMeshFile()
 {
