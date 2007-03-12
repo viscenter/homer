@@ -232,6 +232,11 @@ bool manuModel::readMesh(char *filename)
 	//scale = 12.0 / max(max(w, h), d);
 	scale = 7.0 / max(max(ww, hh), dd);
 	
+	this->minx = 100000;
+	this->miny = 100000;
+	this->minz = 100000;
+	this->maxx = -100000;
+	this->maxy = -100000;
 	this->maxz = -100000;
 	for(int i=0; i < nVer; i++)
 	{
@@ -249,8 +254,20 @@ bool manuModel::readMesh(char *filename)
 		verList[i].y *= scale;
 		verList[i].z *= scale;
 		
+		if (verList[i].x > this->maxx)
+			this->maxx = verList[i].x;
+		if (verList[i].y > this->maxy)
+			this->maxy = verList[i].y;
 		if (verList[i].z > this->maxz)
 			this->maxz = verList[i].z;
+
+
+		if (verList[i].x < this->minx)
+			this->minx = verList[i].x;
+		if (verList[i].y < this->miny)
+			this->miny = verList[i].y;
+		if (verList[i].z < this->minz)
+			this->minz = verList[i].z;
 		
 		// originalList[i].x = verList[i].x;
 		// originalList[i].y = verList[i].y;
