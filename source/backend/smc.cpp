@@ -789,8 +789,12 @@ manuSizeY = -1;
 		manu->readMesh(meshfile);
 		manu->readTexture(texturefile);
 		//	  m_PhysEnv->setWorldY( manu->maxz * 6 );
-		m_PhysEnv->setWorldY( manu->maxz * 20 );
-		m_PhysEnv->setWorldSize( manu->maxz * 20, manu->maxz * 30, manu->maxz * 20 );
+		m_PhysEnv->setWorldY( manu->maxz * 2 );
+		m_PhysEnv->setWorldSize( (manu->maxx - manu->minx) * 2, (manu->maxz - manu->minz) * 1, (manu->maxy- manu->miny) * 2 );
+		
+		printf("x:\t%f\t%f\n",manu->maxx,manu->minx);
+		printf("y:\t%f\t%f\n",manu->maxy,manu->miny);
+		printf("z:\t%f\t%f\n",manu->maxz,manu->minz);
 		
 		if (manu->nVer == 0) exit(0);
 		
