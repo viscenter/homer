@@ -11,10 +11,10 @@
 #include <stdlib.h>
 #include "smc.h"
 
-bool countdisplay = true, screenshot = false;
+bool countdisplay = true, screenshot = false, springs = true, vertices = true;
 int framecount = 10000;
 
-void init()
+void init(char *meshfile, char *texturefile, char *scriptfile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glShadeModel(GL_SMOOTH);
@@ -34,16 +34,16 @@ void init()
 	performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DEFINE_MESH_TYPE, PERFORM_ACTION_FALSE );
 	
-	LoadFilename( "egypt50-100.surf", 0 ); // meshFilename
-	LoadFilename( "trig_test_50-100.ppm", 1 ); // textureFilename
-	LoadFilename( "test.ssf", 3 ); // scriptFilename
+	LoadFilename( meshfile, 0 ); // meshFilename
+	LoadFilename( texturefile, 1 ); // textureFilename
+	LoadFilename( scriptfile, 3 ); // scriptFilename
 	
 	Init();
 
 	performAction( PERFORM_ACTION_ADJUST_COEF_REST, 100 );
 	performAction( PERFORM_ACTION_ADJUST_DAMPING, 40 );
 	performAction( PERFORM_ACTION_ADJUST_GRAVITY_X, 0 );
-	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -200 );
+	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -2000 );
 	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Z, 0 );
 	performAction( PERFORM_ACTION_ADJUST_SPRING_CONSTANT, 2500 );
 	performAction( PERFORM_ACTION_ADJUST_SPRING_DAMPING, 100 );
@@ -89,15 +89,29 @@ void Keyboard( unsigned char value, int x, int y )
 	{
 		case 'r': case 'R': performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE ); break;
 		case 'q': exit(0);
-		case 'p': performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); break;
+		case 'p': printf("Running simulation\n");
+				  performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); break;
 		
-		case 'g': performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE ); break;
+		case 'g': printf("Using gravity\n");
+				  performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE ); break;
 		case 'G': performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE ); break;
 		
-		case 'b': performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, 1000 ); break;
-		case 'n': performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE ); break;
+		case 'b': printf("Adjusting gravity\n");
+				  performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -1000 ); break;
+		case 'n': printf("Committed properties\n");
+				  performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE ); break;
 		
 		case 's': performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE ); screenshot = true; break;
+		case '.':
+				  printf("Toggling spring display\n");
+				  performAction( PERFORM_ACTION_DISPLAY_SPRINGS, springs ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
+				  springs = !springs;
+				  break;
+		case ',':
+				  printf("Toggling vertex display\n");
+				  performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
+				  vertices = !vertices;
+				  break;
 	}
 	glutPostRedisplay();
 }
@@ -106,12 +120,17 @@ int main( int argc, char** argv )
 {
    glutInit( &argc, argv );
    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-   int width = 500, height = 500;
+   int width = 840, height = 750;
    glutInitWindowSize( width, height );
    glutInitWindowPosition( 0, 0 );
    glutCreateWindow( "Scroll Manipulation Toolkit" );
-   
-   init();
+  
+   if(argc == 4) {
+	   init(argv[1],argv[2],argv[3]);
+   }
+   else { 
+	init("data/ski.surf", "data/ski-1.ppm", "data/test.ssf");
+   }
 
    glutDisplayFunc( Display );
    glutReshapeFunc( ReshapeCanvas );
