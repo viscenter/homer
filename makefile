@@ -16,8 +16,9 @@ UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
 LIBS	:=	-lGL -lGLU -lglut -lstdc++ -lm -ljpeg
-LDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
-CFLAGS	:=	-g
+JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
+LDFLAGS		:=
+CFLAGS	:=	-O3
 
 # Linux-specific flags
 ifneq (,$(findstring Linux,$(UNAME)))	
@@ -28,7 +29,7 @@ endif
 # Cygwin-specific flags
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	LIBS	:=	-lopengl32 -lglu32 -lglut32 -lstdc++
-	LDFLAGS	:=	-Wl,--add-stdcall-alias -shared
+	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	:=	-g -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
@@ -38,6 +39,10 @@ endif
 ifneq (,$(findstring Darwin,$(UNAME)))
 	LIBS	:=	-lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
 endif
+
+# gprof flags
+# CFLAGS	+= -pg -g
+# LDFLAGS	:= -pg
 
 BUILD	:=	build
 
@@ -101,13 +106,13 @@ DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
 all: $(SMTBIN) smtjava
 
 $(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
-	$(LD) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
 
 .PHONY: smtjava
 smtjava: $(JAVAGLBIN) smt.class
 
 $(JAVAGLBIN): $(BACKENDOFILES) $(SMTJAVAOFILES)
-	$(LD) $(JAVAINCLUDE) $(LDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
+	$(LD) $(JAVAINCLUDE) $(JNILDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
 
 -include $(DEPENDS)
 
