@@ -1,3 +1,6 @@
+#ifndef __MANUMODEL_H__
+#define __MANUMODEL_H__
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -96,3 +99,5 @@ class manuModel
 		void makeImage();
 		int readPPM( char* filename, unsigned char* &image, int &width, int &height );
 };
+
+#endif // __MANUMODEL_H__
