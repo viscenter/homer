@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "smc.h"
+#include "smtss.h"
 
 bool countdisplay = true, screenshot = false, springs = true, vertices = true;
 int framecount = 10000;
@@ -111,6 +112,10 @@ void Keyboard( unsigned char value, int x, int y )
 				  printf("Toggling vertex display\n");
 				  performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
 				  vertices = !vertices;
+				  break;
+		case 'j':
+				  printf("Taking screenshot\n");
+				  Screenshot_JPEG("test.jpg",3000,3000,90);
 				  break;
 	}
 	glutPostRedisplay();
