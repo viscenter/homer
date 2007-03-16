@@ -4,6 +4,10 @@
 	@echo $(notdir $<)
 	$(CXX) -MMD -MP -MF $(DEPSDIR)/$*.d $(CXXFLAGS) -c $< -o $@
 
+%.o: %.c
+	@echo $(notdir $<)
+	$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d $(CFLAGS) -c $< -o $@
+
 %.class: %.java
 	@echo $(notdir $<)
 	$(JAVAC) $(JAVAFLAGS) $< -d .
@@ -69,6 +73,7 @@ export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir))
 
 BACKENDCPPFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+BACKENDCFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.c)))
 SMTCPPFILES		:=	$(foreach dir,$(SMTSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SMTJAVACPPFILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 
@@ -77,7 +82,8 @@ SMTJAVAJAVAILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.
 # Use CXX for linking
 export LD	:=	$(CXX)
 
-export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o)
+export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o) \
+							$(BACKENDCFILES:.c=.o)
 export SMTOFILES		:=	$(SMTCPPFILES:.cpp=.o)
 export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
 export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
