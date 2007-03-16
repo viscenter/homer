@@ -42,6 +42,7 @@
 
 #include "PhysEnv.h"
 #include "manuModel.h"
+#include "smc.h"
 
 extern manuModel *manu;
 
@@ -1518,6 +1519,29 @@ void CPhysEnv::ResolveCollisions( tParticle *system )
 	}
 }
 
+void CPhysEnv::CheckDistance( void )
+{
+	float magx = 0.0f, magy = 0.0f, magz = 0.0f;
+	tParticle *source = m_CurrentSys;	// CURRENT STATE OF PARTICLE
+	tParticle *target = m_TargetSys;
+	for (int loop = 0; loop < m_ParticleCnt; loop++)
+	{
+		if( m_UseXAxis ) magx += pow(target->pos.x - source->pos.x,2.0);
+		if( m_UseYAxis ) magy += pow(target->pos.y - source->pos.y,2.0);
+		if( m_UseZAxis ) magz += pow(target->pos.z - source->pos.z,2.0);
+
+		source++;
+		target++;
+	}
+	if( magy < 0.000001f && magx > 0.000001f && magz > 0.000001f ) {
+		performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
+		printf("magx:\t%1.20f\n",magx);
+		printf("magy:\t%1.20f\n",magy);
+		printf("magz:\t%1.20f\n",magz);
+		printf("Done.\n\n");
+	}
+}
+
 void CPhysEnv::Simulate( float DeltaTime, bool running )
 {
 	float CurrentTime = 0.0f;
@@ -1555,6 +1579,8 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 						break;
 				}
 			}
+			
+			CheckDistance();
 		}
 		
 		collisionState = CheckForCollisions( m_TargetSys );
@@ -1585,6 +1611,7 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 				assert( Counter < 100 );
 				m_CollisionRootFinding = false;  // FOUND THE COLLISION POINT
 			}
+			
 			
 			// we made a successful step, so swap configurations
 			// to "save" the data for the next step
