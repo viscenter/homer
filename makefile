@@ -37,7 +37,10 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 # Mac-specific flags
 ifneq (,$(findstring Darwin,$(UNAME)))
-	LIBS	:=	-lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
+	export CC		:=	/usr/local/bin/gcc
+	export CXX		:=	/usr/local/bin/g++
+	CFLAGS	+=  -ftree-vectorize -fopenmp
+	LIBS	:=	-fopenmp -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
 endif
 
 # gprof flags

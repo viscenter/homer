@@ -868,8 +868,10 @@ void CPhysEnv::ComputeForces( tParticle *system )
 	tVector		springForce,deltaV,deltaP;
 	
 	curParticle = system;
+#pragma omp parallel for
 	for (loop = 0; loop < m_ParticleCnt; loop++)
 	{
+		curParticle = system + loop;
 		MAKEVECTOR(curParticle->f,0.0f,0.0f,0.0f)		// CLEAR FORCE VECTOR
 
 		if (m_UseGravity)
@@ -891,7 +893,6 @@ void CPhysEnv::ComputeForces( tParticle *system )
 			curParticle->f.y += (-DEFAULT_DAMPING * curParticle->v.y);
 			curParticle->f.z += (-DEFAULT_DAMPING * curParticle->v.z);
 		}
-		curParticle++;
 	}
 	
 	/*
@@ -941,8 +942,10 @@ void CPhysEnv::ComputeForces( tParticle *system )
 	
 	// NOW DO ALL THE SPRINGS
 	spring = m_Spring;
+#pragma omp parallel for
 	for (loop = 0; loop < m_SpringCnt; loop++)
 	{
+		spring = m_Spring + loop;
 		p1 = &system[spring->p1];
 		p2 = &system[spring->p2];
 		
@@ -957,7 +960,6 @@ void CPhysEnv::ComputeForces( tParticle *system )
 		ScaleVector(&springForce,-(Hterm + Dterm),&springForce);	// Calc Force
 		VectorSum(&p1->f,&springForce,&p1->f);			// Apply to Particle 1
 		VectorDifference(&p2->f,&springForce,&p2->f);	// - Force on Particle 2
-		spring++;					// DO THE NEXT SPRING
 	}
 	
 	
