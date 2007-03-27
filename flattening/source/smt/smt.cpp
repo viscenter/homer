@@ -12,6 +12,9 @@
 #include "smc.h"
 #include "smtss.h"
 
+#define WINDOW_WIDTH 512
+#define WINDOW_HEIGHT 512
+
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 int framecount = 10000;
 
@@ -88,7 +91,8 @@ void Display()
 
 	if(screenshot) {
 	  printf("Taking screenshot\n");
-	  Screenshot_JPEG("output.jpg",840,750,90);
+	  // Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
+	  Screenshot_TR("output.ppm",2048,2048);
 	  screenshot = false;
 	  exit(0);
 	}
@@ -125,7 +129,7 @@ void Keyboard( unsigned char value, int x, int y )
 				  break;
 		case 'j':
 				  printf("Taking screenshot\n");
-				  Screenshot_JPEG("test.jpg",840,750,90);
+				  Screenshot_JPEG("test.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
 				  break;
 	}
 	glutPostRedisplay();
@@ -135,7 +139,7 @@ int main( int argc, char** argv )
 {
    glutInit( &argc, argv );
    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-   int width = 840, height = 750;
+   int width = WINDOW_WIDTH, height = WINDOW_HEIGHT;
    glutInitWindowSize( width, height );
    glutInitWindowPosition( 0, 0 );
    glutCreateWindow( "Scroll Manipulation Toolkit" );
