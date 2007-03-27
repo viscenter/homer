@@ -12,7 +12,7 @@
 #include "smc.h"
 #include "smtss.h"
 
-bool countdisplay = true, screenshot = false, springs = true, vertices = true;
+bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 int framecount = 10000;
 
 void init(char *meshfile, char *texturefile, char *scriptfile)
@@ -50,6 +50,9 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	performAction( PERFORM_ACTION_ADJUST_SPRING_DAMPING, 100 );
 	performAction( PERFORM_ACTION_ADJUST_USER_FORCE_MAG, 100000 );
 	performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE );
+	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, PERFORM_ACTION_FALSE );
+	performAction( PERFORM_ACTION_DISPLAY_VERTICES, PERFORM_ACTION_FALSE );
+	performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
 }
 
 void Display()
