@@ -82,9 +82,16 @@ void Display()
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 }*/
-
+	
 	glutSwapBuffers();
 	glutPostRedisplay();
+
+	if(screenshot) {
+	  printf("Taking screenshot\n");
+	  Screenshot_JPEG("output.jpg",840,750,90);
+	  screenshot = false;
+	  exit(0);
+	}
 }
 
 void Keyboard( unsigned char value, int x, int y )
@@ -118,7 +125,7 @@ void Keyboard( unsigned char value, int x, int y )
 				  break;
 		case 'j':
 				  printf("Taking screenshot\n");
-				  Screenshot_JPEG("test.jpg",3000,3000,90);
+				  Screenshot_JPEG("test.jpg",840,750,90);
 				  break;
 	}
 	glutPostRedisplay();
