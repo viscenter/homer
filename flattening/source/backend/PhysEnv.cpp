@@ -44,6 +44,8 @@
 #include "manuModel.h"
 #include "smc.h"
 
+extern bool screenshot;
+
 extern manuModel *manu;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1539,6 +1541,7 @@ void CPhysEnv::CheckDistance( void )
 		printf("magy:\t%1.20f\n",magy);
 		printf("magz:\t%1.20f\n",magz);
 		printf("Done.\n\n");
+		screenshot = true;
 	}
 }
 
