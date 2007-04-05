@@ -30,11 +30,17 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	JAVAGL	:= JavaGL.so
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
 endif
+# MinGW-specific flags
+ifneq (,$(findstring MINGW,$(UNAME)))
+	LIBS	:=	-lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
+	CFLAGS	:=	-D_STDCALL_SUPPORTED -D_M_IX86	
+	JAVAGL	:=	smt.exe
+endif
 # Cygwin-specific flags
 ifneq (,$(findstring CYGWIN,$(UNAME)))
-	LIBS	:=	-lopengl32 -lglu32 -lglut32 -lstdc++
+	LIBS	:=	-lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	:=	-g -mno-cygwin
+	CFLAGS	:=	
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
