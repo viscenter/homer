@@ -47,7 +47,7 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	performAction( PERFORM_ACTION_ADJUST_COEF_REST, 100 );
 	performAction( PERFORM_ACTION_ADJUST_DAMPING, 40 );
 	performAction( PERFORM_ACTION_ADJUST_GRAVITY_X, 0 );
-	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -2000 );
+	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -200 );
 	performAction( PERFORM_ACTION_ADJUST_GRAVITY_Z, 0 );
 	performAction( PERFORM_ACTION_ADJUST_SPRING_CONSTANT, 2500 );
 	performAction( PERFORM_ACTION_ADJUST_SPRING_DAMPING, 100 );
@@ -87,8 +87,7 @@ void Display()
 }*/
 	
 	glutSwapBuffers();
-	glutPostRedisplay();
-
+	
 	if(screenshot) {
 	  printf("Taking screenshot\n");
 	  // Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
@@ -96,6 +95,8 @@ void Display()
 	  screenshot = false;
 	  exit(0);
 	}
+	
+	glutPostRedisplay();
 }
 
 void Keyboard( unsigned char value, int x, int y )

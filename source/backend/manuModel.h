@@ -48,11 +48,11 @@ struct Triangle
 #define COLOR 3
 #define GRAYLEVEL
 
-#define TEXW 2048
-#define TEXH 2048
+// #define TEXW 2048
+// #define TEXH 2048
 
-//#define TEXW 4096
-//#define TEXH 4096
+#define TEXW 4096
+#define TEXH 4096
 // #define TEXD 128
 
 class manuModel
