@@ -50,7 +50,8 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 	export CC		:=	/usr/local/bin/gcc
 	export CXX		:=	/usr/local/bin/g++
 	CFLAGS	+=  -ftree-vectorize -fopenmp
-	LIBS	:=	-fopenmp -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
+	CFLAGS	+=	-I/usr/local/include/opencv
+	LIBS	:=	-fopenmp -lhighgui -lcv -lcxcore -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
 endif
 
 # gprof flags
