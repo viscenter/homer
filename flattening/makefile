@@ -29,6 +29,8 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	JDK		:=	/usr/lib/jvm/java-1.5.0-sun
 	JAVAGL	:= JavaGL.so
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
+	CFLAGS	+= `pkg-config --cflags opencv`
+	LIBS	+= `pkg-config --libs opencv`
 endif
 # MinGW-specific flags
 ifneq (,$(findstring MINGW,$(UNAME)))
