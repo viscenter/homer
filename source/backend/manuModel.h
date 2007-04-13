@@ -98,6 +98,7 @@ class manuModel
 		double edgeLengthSum();
 		void makeImage();
 		int readPPM( char* filename, unsigned char* &image, int &width, int &height );
+		int readImage( char* filename, unsigned char* &image, int &width, int &height );
 };
 
 #endif // __MANUMODEL_H__

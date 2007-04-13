@@ -16,6 +16,9 @@
 #include <string.h>
 #include "manuModel.h"
 
+#include "cv.h"
+#include "highgui.h"
+
 manuModel::manuModel()
 {
 	textureID = 3903;
@@ -332,6 +335,36 @@ int manuModel::readPPM( char* filename, unsigned char* &image, int &width, int &
 	return 0;
 } 
 
+int manuModel::readImage( char* filename, unsigned char* &image, int &width, int &height )
+{
+	IplImage* cvImage = cvLoadImage(filename);
+	unsigned char* data;
+	int step;
+
+	height = cvImage->height;
+	width = cvImage->width;
+	data = (unsigned char *)cvImage->imageData;
+	step = cvImage->widthStep;
+
+	TRIGTEXRES = -1;
+	
+	image = new unsigned char[width*height*3];
+	// copy the image data over (cvImage uses widthStep etc.)
+	for(int i = 0; i < height; i++) {
+		for(int j = 0; j < width; j++) {
+			long offset1 = (i * width + j) * 3;
+			long offset2 = (i * step);
+			
+			image[offset1] = data[offset2+j*3+2]; // red
+			image[offset1+1] = data[offset2+j*3+1]; // green
+			image[offset1+2] = data[offset2+j*3]; // blue
+		}
+	}
+	
+	cvReleaseImage(&cvImage);
+	return 0;
+}
+
 void manuModel::readTexture(char *filename)
 {
 	/**************************************************************/
@@ -340,7 +373,7 @@ void manuModel::readTexture(char *filename)
  pixel *colorIma;
 	
  textureFile = filename;
- readPPM( filename, colorIma, imaW, imaH );
+ readImage( filename, colorIma, imaW, imaH );
 
  if (YL_UseTriangularTextureMap){
 	
