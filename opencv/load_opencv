@@ -1,0 +1,7 @@
+#!/bin/bash
+python -ic "from opencv.cv import *; \
+            from opencv.highgui import *; \
+            from opencv.matlab_syntax import *; \
+            from calibration import *; \
+            cvStartWindowThread(); \
+            print \"OpenCV libraries loaded.\""
