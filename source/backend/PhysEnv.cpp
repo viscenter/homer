@@ -1535,7 +1535,7 @@ void CPhysEnv::CheckDistance( void )
 		source++;
 		target++;
 	}
-	if( magy < 0.000001f && magx > 0.000001f && magz > 0.000001f ) {
+	if( magy < 0.000000001f && magx > 0.000001f && magz > 0.000001f ) {
 		performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
 		printf("magx:\t%1.20f\n",magx);
 		printf("magy:\t%1.20f\n",magy);
