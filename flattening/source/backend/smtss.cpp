@@ -138,7 +138,7 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 	trImageSize(tr, image_width, image_height);
 	trRowOrder(tr, TR_TOP_TO_BOTTOM);
 
-	trPerspective(tr, 60.0, (GLfloat) width/(GLfloat) height, 1.0, 2000.0);
+	trPerspective(tr, 60.0, (GLfloat) image_width/(GLfloat) image_height, 1.0, 2000.0);
 
 	if(is_ppm) {
 		/* Prepare ppm output file */
