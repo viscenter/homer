@@ -25,7 +25,7 @@ using namespace std;
 
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 
-bool auto_start = true;
+bool auto_start = true, auto_quit = true;
 
 string output_filename;
 int output_width, output_height;
@@ -75,27 +75,6 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	if(auto_start) {
 		performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
 	}
-}
-
-void Display()
-{
-	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
-	
-	changeAngle();
-	
-	RenderScene();
-	
-	glutSwapBuffers();
-	
-	if(screenshot) {
-	  printf("Taking screenshot\n");
-	  // Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
-	  Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
-	  screenshot = false;
-	  exit(0);
-	}
-	
-	glutPostRedisplay();
 }
 
 void rotate( int deltaX, int deltaY )
@@ -151,6 +130,36 @@ void MotionHandler( int x, int y )
 	mouseX = x;
 	mouseY = y;
 
+	glutPostRedisplay();
+}
+
+void Display()
+{
+	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+	
+	changeAngle();
+	
+	RenderScene();
+	
+	glutSwapBuffers();
+	
+	if(screenshot) {
+		printf("Taking screenshot\n");
+		
+		// Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
+		Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
+		screenshot = false;
+		performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
+		
+		if(auto_quit) {
+			exit(0);
+		}
+		else {
+			glutMouseFunc( MouseHandler );
+			glutMotionFunc( MotionHandler );
+		}
+	}
+	
 	glutPostRedisplay();
 }
 
@@ -215,8 +224,10 @@ int main( int argc, char** argv )
 		("output-geometry,g",
 		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
 			"output image file geometry in WxH format")
-		("no-auto-start,n",
+		("no-auto-start,s",
 			"don't automatically play script file")
+		("no-auto-quit,q",
+			"don't automatically quit after screenshot")
 		;
 
 	po::options_description hidden("Hidden options");
@@ -254,6 +265,9 @@ int main( int argc, char** argv )
 
 	if(vm.count("no-auto-start")) {
 		auto_start = false;
+	}
+	if(vm.count("no-auto-quit")) {
+		auto_quit = false;
 	}
 
 	string::size_type x_position = output_geometry.find("x");
