@@ -204,8 +204,12 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 			int bytesPerImageRow = image_width*3*sizeof(GLubyte);
 			int i;
 			GLubyte *rowPtr;
-			unsigned char* data = (unsigned char*)output_image->imageData;
-			int step = output_image->widthStep;
+			unsigned char* data;
+			int step;
+			if(!is_ppm) {
+				data = (unsigned char*)output_image->imageData;
+				step = output_image->widthStep;
+			}
 
 			/* The arithmetic is a bit tricky here because of borders and
 			* the up/down flip.  Thanks to Marcel Lancelle for fixing it.
