@@ -19,7 +19,7 @@ export JAVAC	:=	javac
 UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
-LIBS	:=	-lGL -lGLU -lglut -lstdc++ -lm -ljpeg
+LIBS	:=	-lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
 CFLAGS	:=	-O3
@@ -40,7 +40,7 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 endif
 # Cygwin-specific flags
 ifneq (,$(findstring CYGWIN,$(UNAME)))
-	LIBS	:=	-lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
+	LIBS	:=	-lboost_program_options -lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	:=	
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
@@ -49,11 +49,11 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 # Mac-specific flags
 ifneq (,$(findstring Darwin,$(UNAME)))
-	export CC		:=	/usr/local/bin/gcc
-	export CXX		:=	/usr/local/bin/g++
-	CFLAGS	+=  -ftree-vectorize -fopenmp
-	CFLAGS	+=	-I/usr/local/include/opencv
-	LIBS	:=	-fopenmp -lhighgui -lcv -lcxcore -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
+	# export CC		:=	/usr/local/bin/gcc
+	# export CXX		:=	/usr/local/bin/g++
+	# CFLAGS	+=  -ftree-vectorize -fopenmp
+	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include
+	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
 endif
 
 # gprof flags

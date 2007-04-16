@@ -7,16 +7,23 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include "smc.h"
+#include <cstdio>
+#include <cstdlib>
 #include "smtss.h"
 
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+#include "smc.h"
 #define WINDOW_WIDTH 512
 #define WINDOW_HEIGHT 512
 
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
-int framecount = 10000;
 
 void init(char *meshfile, char *texturefile, char *scriptfile)
 {
@@ -65,26 +72,6 @@ void Display()
 	changeAngle();
 	
 	RenderScene();
-
-	/*if( countdisplay)
-	{
-   int width = 500, height = 500;
-	glViewport(0, 0, width, height); 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, width, 0.0, height );
-	glMatrixModatade(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	char framecount[10];
-	sprintf( framecount, "%d", GetCurrentFrameCount() );
-	MBglDrawString( 10, 10, framecount );
-	// Pop the matrices back on
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-}*/
 	
 	glutSwapBuffers();
 	
@@ -138,24 +125,59 @@ void Keyboard( unsigned char value, int x, int y )
 
 int main( int argc, char** argv )
 {
-   glutInit( &argc, argv );
-   glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-   int width = WINDOW_WIDTH, height = WINDOW_HEIGHT;
-   glutInitWindowSize( width, height );
-   glutInitWindowPosition( 0, 0 );
-   glutCreateWindow( "Scroll Manipulation Toolkit" );
-  
-   if(argc == 4) {
-	   init(argv[1],argv[2],argv[3]);
-   }
-   else { 
-	init("data/ski.surf", "data/ski-1.ppm", "data/test.ssf");
-   }
+	string mesh_file, image_file, script_file;
+	
+	glutInit( &argc, argv );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+	int width = WINDOW_WIDTH, height = WINDOW_HEIGHT;
+	glutInitWindowSize( width, height );
+	glutInitWindowPosition( 0, 0 );
+	glutCreateWindow( "Scroll Manipulation Toolkit" );
 
-   glutDisplayFunc( Display );
-   glutReshapeFunc( ReshapeCanvas );
-   glutKeyboardFunc( Keyboard );
-  // glutIdleFunc( Idle );
-   glutMainLoop();
-   return 0;
+	po::options_description generic("Program options");
+	generic.add_options()
+		("help", "produce help message")
+		;
+
+	po::options_description hidden("Hidden options");
+	hidden.add_options()
+		("mesh-file,M",
+		 	po::value<string>(&mesh_file)->default_value("data/ski.surf"),
+			"input mesh file")
+		("image-file,I",
+		 	po::value<string>(&image_file)->default_value("data/ski-1.ppm"),
+			"input image file")
+		("script-file,S",
+		 	po::value<string>(&script_file)->default_value("data/test.ssf"),
+			"input script file")
+		;
+	
+	po::options_description cmdline_options;
+	cmdline_options.add(generic).add(hidden);
+	
+	po::positional_options_description pd;
+	pd.add("mesh-file",1);
+	pd.add("image-file",1);
+	pd.add("script-file",1);
+	
+	po::variables_map vm;
+	po::store(po::command_line_parser(argc, argv).
+			options(cmdline_options).positional(pd).run(), vm);
+	po::notify(vm);
+	
+	if(vm.count("help")) {
+		cout << "Usage:\n";
+		cout << "\t" << argv[0] << " [mesh file] [image file] [script file]\n";
+		cout << generic << "\n";
+		return 1;
+	}
+	
+	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
+
+	glutDisplayFunc( Display );
+	glutReshapeFunc( ReshapeCanvas );
+	glutKeyboardFunc( Keyboard );
+	// glutIdleFunc( Idle );
+	glutMainLoop();
+	return 0;
 }
