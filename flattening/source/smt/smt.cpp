@@ -32,6 +32,9 @@ int output_width, output_height;
 
 extern GLint width, height;
 
+int mouse_state;
+int mouseX = 0, mouseY = 0;
+
 void init(char *meshfile, char *texturefile, char *scriptfile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -95,11 +98,71 @@ void Display()
 	glutPostRedisplay();
 }
 
+void rotate( int deltaX, int deltaY )
+{
+	static int xAxis = 0, yAxis = 0;
+
+	if(deltaX != 0) {
+		xAxis += deltaX;
+		performAction( PERFORM_ACTION_ROTATE_ANGLE_X, xAxis );
+	}
+	if(deltaY != 0) {
+		yAxis += deltaY;
+		performAction( PERFORM_ACTION_ROTATE_ANGLE_Y, yAxis );
+	}
+}
+
+void zoom( int deltaY )
+{
+	static int zoomfactor = 0;
+
+	if(deltaY != 0) {
+		zoomfactor += deltaY;
+		performAction( PERFORM_ACTION_ADJUST_DISTANCE, zoomfactor );
+	}
+}
+
+void MouseHandler( int button, int state, int x, int y )
+{
+	if(state == GLUT_DOWN) {
+		mouse_state = button;
+	}
+	else {
+		mouse_state = 0;
+	}
+
+	mouseX = x;
+	mouseY = y;
+}
+
+void MotionHandler( int x, int y )
+{
+	switch(mouse_state) {
+		case GLUT_LEFT_BUTTON:
+			rotate(mouseX - x, mouseY - y);
+			break;
+		case GLUT_RIGHT_BUTTON:
+			zoom(mouseY - y);
+			break;
+		default:
+			break;
+	}
+
+	mouseX = x;
+	mouseY = y;
+
+	glutPostRedisplay();
+}
+
 void Keyboard( unsigned char value, int x, int y )
 {
 	switch( value )
 	{
-		case 'r': case 'R': performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE ); break;
+		case 'r': case 'R': 
+			performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
+			glutMouseFunc( NULL );
+			glutMotionFunc( NULL );
+			break;
 		case 'q': exit(0);
 		case 'p': printf("Running simulation\n");
 				  performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); break;
@@ -205,6 +268,10 @@ int main( int argc, char** argv )
 	glutDisplayFunc( Display );
 	glutReshapeFunc( ReshapeCanvas );
 	glutKeyboardFunc( Keyboard );
+	if(!auto_start) {
+		glutMouseFunc( MouseHandler );
+		glutMotionFunc( MotionHandler );
+	}
 	// glutIdleFunc( Idle );
 	glutMainLoop();
 	return 0;
