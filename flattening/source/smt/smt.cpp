@@ -127,13 +127,6 @@ int main( int argc, char** argv )
 {
 	string mesh_file, image_file, script_file;
 	
-	glutInit( &argc, argv );
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-	int width = WINDOW_WIDTH, height = WINDOW_HEIGHT;
-	glutInitWindowSize( width, height );
-	glutInitWindowPosition( 0, 0 );
-	glutCreateWindow( "Scroll Manipulation Toolkit" );
-
 	po::options_description generic("Program options");
 	generic.add_options()
 		("help", "produce help message")
@@ -172,6 +165,13 @@ int main( int argc, char** argv )
 		return 1;
 	}
 	
+	glutInit( &argc, argv );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+	int width = WINDOW_WIDTH, height = WINDOW_HEIGHT;
+	glutInitWindowSize( width, height );
+	glutInitWindowPosition( 0, 0 );
+	glutCreateWindow( "Scroll Manipulation Toolkit" );
+
 	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
 
 	glutDisplayFunc( Display );
