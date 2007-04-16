@@ -40,9 +40,9 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 endif
 # Cygwin-specific flags
 ifneq (,$(findstring CYGWIN,$(UNAME)))
-	LIBS	:=	-lboost_program_options -lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	:=	
+	CFLAGS	:=	-I/usr/include/opencv -I/usr/include/boost-1_33_1	
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
