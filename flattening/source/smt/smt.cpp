@@ -25,6 +25,8 @@ using namespace std;
 
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 
+bool auto_start = true;
+
 string output_filename;
 int output_width, output_height;
 
@@ -67,7 +69,9 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, PERFORM_ACTION_FALSE );
 	performAction( PERFORM_ACTION_DISPLAY_VERTICES, PERFORM_ACTION_FALSE );
-	performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
+	if(auto_start) {
+		performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
+	}
 }
 
 void Display()
@@ -148,7 +152,8 @@ int main( int argc, char** argv )
 		("output-geometry,g",
 		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
 			"output image file geometry in WxH format")
-
+		("no-auto-start,n",
+			"don't automatically play script file")
 		;
 
 	po::options_description hidden("Hidden options");
@@ -182,6 +187,10 @@ int main( int argc, char** argv )
 		cout << "\t" << argv[0] << " [mesh file] [image file] [script file]\n";
 		cout << generic << "\n";
 		return 1;
+	}
+
+	if(vm.count("no-auto-start")) {
+		auto_start = false;
 	}
 
 	string::size_type x_position = output_geometry.find("x");
