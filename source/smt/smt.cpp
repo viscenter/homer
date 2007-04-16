@@ -25,6 +25,9 @@ using namespace std;
 
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 
+string output_filename;
+int output_width, output_height;
+
 extern GLint width, height;
 
 void init(char *meshfile, char *texturefile, char *scriptfile)
@@ -80,7 +83,7 @@ void Display()
 	if(screenshot) {
 	  printf("Taking screenshot\n");
 	  // Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
-	  Screenshot_TR("output.ppm",2048,2048);
+	  Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
 	  screenshot = false;
 	  exit(0);
 	}
@@ -127,7 +130,7 @@ void Keyboard( unsigned char value, int x, int y )
 
 int main( int argc, char** argv )
 {
-	string mesh_file, image_file, script_file;
+	string mesh_file, image_file, script_file, output_geometry;
 	
 	width = WINDOW_WIDTH;
 	height = WINDOW_HEIGHT;
@@ -139,6 +142,13 @@ int main( int argc, char** argv )
 	po::options_description generic("Program options");
 	generic.add_options()
 		("help", "produce help message")
+		("output,o",
+		 	po::value<string>(&output_filename)->default_value("output.png"),
+			"output image file")
+		("output-geometry,g",
+		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
+			"output image file geometry in WxH format")
+
 		;
 
 	po::options_description hidden("Hidden options");
@@ -173,7 +183,11 @@ int main( int argc, char** argv )
 		cout << generic << "\n";
 		return 1;
 	}
-	
+
+	string::size_type x_position = output_geometry.find("x");
+	output_width = atoi(output_geometry.substr(0,(int)x_position).c_str());
+	output_height = atoi(output_geometry.substr((int)x_position + 1).c_str());
+
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	glutCreateWindow( "Scroll Manipulation Toolkit" );
 
