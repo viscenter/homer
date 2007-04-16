@@ -18,6 +18,9 @@ extern "C" {
 #include "tr.h"
 #include "smc.h"
 
+#include "cv.h"
+#include "highgui.h"
+
 unsigned char *flipdata( unsigned char *data, int width, int height )
 {
 	unsigned char *temp = data;
@@ -95,117 +98,150 @@ extern CPhysEnv *m_PhysEnv;
 
 int Screenshot_TR( char filename[], int image_width, int image_height )
 {
-   TRcontext *tr;
-   GLubyte *buffer;
-   GLubyte *tile;
-   FILE *f;
-   int more;
-   int i;
+	TRcontext *tr;
+	GLubyte *buffer;
+	GLubyte *tile;
+	FILE *f;
+	int more;
+	int i;
+	IplImage* output_image;
 
-   printf("Generating %d by %d image file...\n", image_width, image_height);
+	bool is_ppm = false;
+	int len = strlen(filename);
+	if(strcasecmp(".ppm",&filename[len-4]) == 0) {
+		is_ppm = true;
+	}
 
-   /* allocate buffer large enough to store one tile */
-   tile = (GLubyte*)malloc(TILE_WIDTH * TILE_HEIGHT * 3 * sizeof(GLubyte));
-   if (!tile) {
-      printf("Malloc of tile buffer failed!\n");
-      return 1;
-   }
+	printf("Generating %d by %d image file...\n", image_width, image_height);
 
-   /* allocate buffer to hold a row of tiles */
-   buffer = (GLubyte*)malloc(image_width * TILE_HEIGHT * 3 * sizeof(GLubyte));
-   if (!buffer) {
-      free(tile);
-      printf("Malloc of tile row buffer failed!\n");
-      return 1;
-   }
+	/* allocate buffer large enough to store one tile */
+	tile = (GLubyte*)malloc(TILE_WIDTH * TILE_HEIGHT * 3 * sizeof(GLubyte));
+	if (!tile) {
+		printf("Malloc of tile buffer failed!\n");
+		return 1;
+	}
 
-   /* Setup.  Each tile is TILE_WIDTH x TILE_HEIGHT pixels. */
-   tr = trNew();
-   trTileSize(tr, TILE_WIDTH, TILE_HEIGHT, TILE_BORDER);
-   trTileBuffer(tr, GL_RGB, GL_UNSIGNED_BYTE, tile);
-   trImageSize(tr, image_width, image_height);
-   trRowOrder(tr, TR_TOP_TO_BOTTOM);
+	/* allocate buffer to hold a row of tiles */
+	buffer = (GLubyte*)malloc(image_width * TILE_HEIGHT * 3 * sizeof(GLubyte));
+	if (!buffer) {
+		free(tile);
+		printf("Malloc of tile row buffer failed!\n");
+		return 1;
+	}
 
-   trPerspective(tr, 60.0, (GLfloat) 512/(GLfloat) 512, 1.0, 2000.0);
-   
-   /* Prepare ppm output file */
-   f = fopen(filename, "w");
-   if (!f) {
-      printf("Couldn't open image file: %s\n", filename);
-      return 1;
-   }
-   fprintf(f,"P6\n");
-   fprintf(f,"# ppm-file created by %s\n", "trdemo2");
-   fprintf(f,"%i %i\n", image_width, image_height);
-   fprintf(f,"255\n");
-   fclose(f);
-   f = fopen(filename, "ab");  /* now append binary data */
-   if (!f) {
-      printf("Couldn't append to image file: %s\n", filename);
-      return 1;
-   }
+	/* Setup.  Each tile is TILE_WIDTH x TILE_HEIGHT pixels. */
+	tr = trNew();
+	trTileSize(tr, TILE_WIDTH, TILE_HEIGHT, TILE_BORDER);
+	trTileBuffer(tr, GL_RGB, GL_UNSIGNED_BYTE, tile);
+	trImageSize(tr, image_width, image_height);
+	trRowOrder(tr, TR_TOP_TO_BOTTOM);
 
-   /*
-    * Should set GL_PACK_ALIGNMENT to 1 if the image width is not
-    * a multiple of 4, but that seems to cause a bug with some NVIDIA
-    * cards/drivers.
-    */
-   glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	trPerspective(tr, 60.0, (GLfloat) 512/(GLfloat) 512, 1.0, 2000.0);
 
-   /* Draw tiles */
-   more = 1;
-   while (more) {
-      int curColumn;
-      trBeginTile(tr);
-      curColumn = trGet(tr, TR_CURRENT_COLUMN);
-      // RenderScene();      /* draw our stuff here */   
-  	  glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
-      // glPushMatrix();
-      // glLoadIdentity();
-	  m_PhysEnv->RenderWorld();
-	  // glPopMatrix();
-	  more = trEndTile(tr);
+	if(is_ppm) {
+		/* Prepare ppm output file */
+		f = fopen(filename, "w");
+		if (!f) {
+			printf("Couldn't open image file: %s\n", filename);
+			return 1;
+		}
+		fprintf(f,"P6\n");
+		fprintf(f,"# ppm-file created by %s\n", "trdemo2");
+		fprintf(f,"%i %i\n", image_width, image_height);
+		fprintf(f,"255\n");
+		fclose(f);
+		f = fopen(filename, "ab");  // now append binary data
+		if (!f) {
+			printf("Couldn't append to image file: %s\n", filename);
+			return 1;
+		}
+	}
+	else {
+		output_image = cvCreateImage( cvSize(image_width, image_height), IPL_DEPTH_8U, 3);
+	}
 
-      /* save tile into tile row buffer*/
-      {
-	 int curTileWidth = trGet(tr, TR_CURRENT_TILE_WIDTH);
-	 int bytesPerImageRow = image_width*3*sizeof(GLubyte);
-	 int bytesPerTileRow = (TILE_WIDTH-2*TILE_BORDER) * 3*sizeof(GLubyte);
-	 int xOffset = curColumn * bytesPerTileRow;
-	 int bytesPerCurrentTileRow = (curTileWidth-2*TILE_BORDER)*3*sizeof(GLubyte);
-	 int i;
-	 int curTileHeight = trGet(tr, TR_CURRENT_TILE_HEIGHT);
-	 for (i=0;i<curTileHeight;i++) {
-	    memcpy(buffer + i*bytesPerImageRow + xOffset, /* Dest */
-		   tile + i*bytesPerTileRow,              /* Src */
-		   bytesPerCurrentTileRow);               /* Byte count*/
-	 }
-      }
-      
-      if (curColumn == trGet(tr, TR_COLUMNS)-1) {
-	 /* write this buffered row of tiles to the file */
-	 int curTileHeight = trGet(tr, TR_CURRENT_TILE_HEIGHT);
-	 int bytesPerImageRow = image_width*3*sizeof(GLubyte);
-	 int i;
-	 GLubyte *rowPtr;
-         /* The arithmetic is a bit tricky here because of borders and
-          * the up/down flip.  Thanks to Marcel Lancelle for fixing it.
-          */
-	 for (i=2*TILE_BORDER;i<curTileHeight;i++) {
-	    /* Remember, OpenGL images are bottom to top.  Have to reverse. */
-	    rowPtr = buffer + (curTileHeight-1-i) * bytesPerImageRow;
-	    fwrite(rowPtr, 1, image_width*3, f);
-	 }
-      }
+	/*
+	* Should set GL_PACK_ALIGNMENT to 1 if the image width is not
+	* a multiple of 4, but that seems to cause a bug with some NVIDIA
+	* cards/drivers.
+	*/
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
-   }
-   trDelete(tr);
+	/* Draw tiles */
+	more = 1;
+	int curheight = 0;
+	while (more) {
+		int curColumn;
+		trBeginTile(tr);
+		curColumn = trGet(tr, TR_CURRENT_COLUMN);
+		// RenderScene();      /* draw our stuff here */   
+		glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+		// glPushMatrix();
+		// glLoadIdentity();
+		m_PhysEnv->RenderWorld();
+		// glPopMatrix();
+		more = trEndTile(tr);
 
-   fclose(f);
-   printf("%s complete.\n", filename);
+		/* save tile into tile row buffer*/
+		{
+			int curTileWidth = trGet(tr, TR_CURRENT_TILE_WIDTH);
+			int bytesPerImageRow = image_width*3*sizeof(GLubyte);
+			int bytesPerTileRow = (TILE_WIDTH-2*TILE_BORDER) * 3*sizeof(GLubyte);
+			int xOffset = curColumn * bytesPerTileRow;
+			int bytesPerCurrentTileRow = (curTileWidth-2*TILE_BORDER)*3*sizeof(GLubyte);
+			int i;
+			int curTileHeight = trGet(tr, TR_CURRENT_TILE_HEIGHT);
+			for (i=0;i<curTileHeight;i++) {
+				memcpy(buffer + i*bytesPerImageRow + xOffset, /* Dest */
+				tile + i*bytesPerTileRow,              /* Src */
+				bytesPerCurrentTileRow);               /* Byte count*/
+			}
+		}
 
-   free(tile);
-   free(buffer);
+		if (curColumn == trGet(tr, TR_COLUMNS)-1) {
+			/* write this buffered row of tiles to the file */
+			int curTileHeight = trGet(tr, TR_CURRENT_TILE_HEIGHT);
+			int bytesPerImageRow = image_width*3*sizeof(GLubyte);
+			int i;
+			GLubyte *rowPtr;
+			unsigned char* data = (unsigned char*)output_image->imageData;
+			int step = output_image->widthStep;
 
-   return 0;
+			/* The arithmetic is a bit tricky here because of borders and
+			* the up/down flip.  Thanks to Marcel Lancelle for fixing it.
+			*/
+			for (i=2*TILE_BORDER;i<curTileHeight;i++) {
+				/* Remember, OpenGL images are bottom to top.  Have to reverse. */
+				rowPtr = buffer + (curTileHeight-1-i) * bytesPerImageRow;
+				if(is_ppm) {
+					fwrite(rowPtr, 1, image_width*3, f);
+				}
+				else {
+					for(int j = 0; j < image_width; j++) {
+						long offset2 = (curheight * step);
+						data[offset2+j*3+2] = rowPtr[j*3];
+						data[offset2+j*3+1] = rowPtr[j*3+1];
+						data[offset2+j*3] = rowPtr[j*3+2];
+					}
+					curheight++;
+				}
+			}
+		}
+	}
+
+	trDelete(tr);
+
+	if(is_ppm) {
+		fclose(f);
+	}
+	else {
+		cvSaveImage( filename, output_image );
+		cvReleaseImage( &output_image );
+	}
+	printf("%s complete.\n", filename);
+
+	free(tile);
+	free(buffer);
+
+	return 0;
 }
