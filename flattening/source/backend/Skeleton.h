@@ -22,7 +22,6 @@
 #if !defined(SKELETON_H__INCLUDED_)
 #define SKELETON_H__INCLUDED_
 
-#define ushort	unsigned short
 /// Bone Definitions /////////////////////////////////////////////////////////
 #define BONE_ID_ROOT				1		// ROOT BONE
 ///////////////////////////////////////////////////////////////////////////////
@@ -68,7 +67,7 @@ struct t_Visual
 	float *vertexData;	// INTERLEAVED VERTEX DATA IN DATAFORMAT
 	long vertexCnt;		// NUMBER OF VERTICES IN VISUAL
 	bool reuseVertices;	// DO I WANT TO USED INDEXED ARRAYS
-	ushort *faceIndex;		// INDEXED VERTEX DATA IF VERTICES ARE REUSED
+	unsigned short *faceIndex;		// INDEXED VERTEX DATA IF VERTICES ARE REUSED
 	int vSize;			// NUMBER OF FLOATS IN A VERTEX
 	long faceCnt;		// NUMBER OF FACES IN VISUAL
 	tVector *faceNormal;	// POINTER TO FACE NORMALS
