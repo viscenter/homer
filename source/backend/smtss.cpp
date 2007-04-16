@@ -21,6 +21,8 @@ extern "C" {
 #include "cv.h"
 #include "highgui.h"
 
+extern GLint width, height;
+
 unsigned char *flipdata( unsigned char *data, int width, int height )
 {
 	unsigned char *temp = data;
@@ -90,10 +92,6 @@ int Screenshot_JPEG( char filename[], int width, int height, int quality )
 	return result;
 }
 
-#define TILE_WIDTH 512
-#define TILE_HEIGHT 512
-#define TILE_BORDER 10
-
 extern CPhysEnv *m_PhysEnv;
 
 int Screenshot_TR( char filename[], int image_width, int image_height )
@@ -106,6 +104,10 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 	int i;
 	IplImage* output_image;
 
+	int tile_width = width;
+	int tile_height = height;
+	int tile_border = 10;
+
 	bool is_ppm = false;
 	int len = strlen(filename);
 	if(strcasecmp(".ppm",&filename[len-4]) == 0) {
@@ -115,28 +117,28 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 	printf("Generating %d by %d image file...\n", image_width, image_height);
 
 	/* allocate buffer large enough to store one tile */
-	tile = (GLubyte*)malloc(TILE_WIDTH * TILE_HEIGHT * 3 * sizeof(GLubyte));
+	tile = (GLubyte*)malloc(tile_width * tile_height * 3 * sizeof(GLubyte));
 	if (!tile) {
 		printf("Malloc of tile buffer failed!\n");
 		return 1;
 	}
 
 	/* allocate buffer to hold a row of tiles */
-	buffer = (GLubyte*)malloc(image_width * TILE_HEIGHT * 3 * sizeof(GLubyte));
+	buffer = (GLubyte*)malloc(image_width * tile_height * 3 * sizeof(GLubyte));
 	if (!buffer) {
 		free(tile);
 		printf("Malloc of tile row buffer failed!\n");
 		return 1;
 	}
 
-	/* Setup.  Each tile is TILE_WIDTH x TILE_HEIGHT pixels. */
+	/* Setup.  Each tile is tile_width x tile_height pixels. */
 	tr = trNew();
-	trTileSize(tr, TILE_WIDTH, TILE_HEIGHT, TILE_BORDER);
+	trTileSize(tr, tile_width, tile_height, tile_border);
 	trTileBuffer(tr, GL_RGB, GL_UNSIGNED_BYTE, tile);
 	trImageSize(tr, image_width, image_height);
 	trRowOrder(tr, TR_TOP_TO_BOTTOM);
 
-	trPerspective(tr, 60.0, (GLfloat) 512/(GLfloat) 512, 1.0, 2000.0);
+	trPerspective(tr, 60.0, (GLfloat) width/(GLfloat) height, 1.0, 2000.0);
 
 	if(is_ppm) {
 		/* Prepare ppm output file */
@@ -186,9 +188,9 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 		{
 			int curTileWidth = trGet(tr, TR_CURRENT_TILE_WIDTH);
 			int bytesPerImageRow = image_width*3*sizeof(GLubyte);
-			int bytesPerTileRow = (TILE_WIDTH-2*TILE_BORDER) * 3*sizeof(GLubyte);
+			int bytesPerTileRow = (tile_width-2*tile_border) * 3*sizeof(GLubyte);
 			int xOffset = curColumn * bytesPerTileRow;
-			int bytesPerCurrentTileRow = (curTileWidth-2*TILE_BORDER)*3*sizeof(GLubyte);
+			int bytesPerCurrentTileRow = (curTileWidth-2*tile_border)*3*sizeof(GLubyte);
 			int i;
 			int curTileHeight = trGet(tr, TR_CURRENT_TILE_HEIGHT);
 			for (i=0;i<curTileHeight;i++) {
@@ -214,7 +216,7 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 			/* The arithmetic is a bit tricky here because of borders and
 			* the up/down flip.  Thanks to Marcel Lancelle for fixing it.
 			*/
-			for (i=2*TILE_BORDER;i<curTileHeight;i++) {
+			for (i=2*tile_border;i<curTileHeight;i++) {
 				/* Remember, OpenGL images are bottom to top.  Have to reverse. */
 				rowPtr = buffer + (curTileHeight-1-i) * bytesPerImageRow;
 				if(is_ppm) {
