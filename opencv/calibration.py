@@ -169,13 +169,13 @@ def readCheckers(file, image):
   else:
     dist = (size-1)*4
     vect = cvPoint3D64f( \
-        (checkers[i-4][0]-checkers[3][0])/dist, \
-        (checkers[i-4][1]-checkers[3][1])/dist, \
-        (checkers[i-4][2]-checkers[3][2])/dist )
+        (checkers[i-1][0]-checkers[0][0])/dist, \
+        (checkers[i-1][1]-checkers[0][1])/dist, \
+        (checkers[i-1][2]-checkers[0][2])/dist )
     for j in range(i):
       checkers[j][0] += vect.x
-      checkers[j][1] += vect.y
-      checkers[j][2] += vect.z-1
+      checkers[j][1] += vect.y+1
+      checkers[j][2] += vect.z
   im = cvLoadImage( image, CV_LOAD_IMAGE_GRAYSCALE )
   dim = int(size*2-1)
   found,corners = findCorners( im, cvSize(dim,dim) )
