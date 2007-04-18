@@ -1521,27 +1521,45 @@ void CPhysEnv::ResolveCollisions( tParticle *system )
 	}
 }
 
-void CPhysEnv::CheckDistance( void )
+void CPhysEnv::CheckDistance( float DeltaTime )
 {
 	float magx = 0.0f, magy = 0.0f, magz = 0.0f;
+	
+	static float TotalTime = 0.0f;
+	TotalTime += DeltaTime;
+	
 	tParticle *source = m_CurrentSys;	// CURRENT STATE OF PARTICLE
 	tParticle *target = m_TargetSys;
 	for (int loop = 0; loop < m_ParticleCnt; loop++)
 	{
-		if( m_UseXAxis ) magx += pow(target->pos.x - source->pos.x,2.0);
-		if( m_UseYAxis ) magy += pow(target->pos.y - source->pos.y,2.0);
-		if( m_UseZAxis ) magz += pow(target->pos.z - source->pos.z,2.0);
-
+		magx += fabsf(target->pos.x - source->pos.x);
+		magy += fabsf(target->pos.y - source->pos.y);
+		magz += fabsf(target->pos.z - source->pos.z);
+		
 		source++;
 		target++;
 	}
-	if( magy < 0.000000001f && magx > 0.000001f && magz > 0.000001f ) {
-		performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
-		printf("magx:\t%1.20f\n",magx);
-		printf("magy:\t%1.20f\n",magy);
-		printf("magz:\t%1.20f\n",magz);
-		printf("Done.\n\n");
-		screenshot = true;
+
+	magx = (magx/(float) m_ParticleCnt)/DeltaTime;
+	magy = (magy/(float) m_ParticleCnt)/DeltaTime;
+	magz = (magz/(float) m_ParticleCnt)/DeltaTime;
+	float dist = sqrtf(powf(magx,2.0)+powf(magy,4.0)+powf(magz,2.0))/DeltaTime;
+
+	/*	
+	printf("time:\t%1.20f\n",TotalTime);
+	printf("magx:\t%1.20f\n",magx);
+	printf("magy:\t%1.20f\n",magy);
+	printf("magz:\t%1.20f\n",magz);
+	printf("dist:\t%1.20f\n",dist);
+	*/
+	
+	float comp = 0.001f;
+	if( (magy < comp) && (magx < comp) && (magz < comp) ) {
+		if( (dist < 0.1f) && (dist > 0.0f) ) {
+			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
+			printf("Done.\n\n");
+			screenshot = true;
+		}
 	}
 }
 
@@ -1583,7 +1601,7 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 				}
 			}
 			
-			CheckDistance();
+			CheckDistance(TargetTime - CurrentTime);
 		}
 		
 		collisionState = CheckForCollisions( m_TargetSys );
