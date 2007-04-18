@@ -36,6 +36,7 @@ int mouse_state;
 int mouseX = 0, mouseY = 0;
 
 float TotalTime = 0.0f;
+float time_limit;
 
 void init(char *meshfile, char *texturefile, char *scriptfile)
 {
@@ -151,6 +152,23 @@ void MotionHandler( int x, int y )
 	glutPostRedisplay();
 }
 
+void Take_Screenshot()
+{
+	printf("Taking screenshot\n");
+		
+	Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
+	screenshot = false;
+	performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
+		
+	if(auto_quit) {
+		exit(0);
+	}
+	else {
+		glutMouseFunc( MouseHandler );
+		glutMotionFunc( MotionHandler );
+	}
+}
+
 void Display()
 {
 	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
@@ -161,21 +179,15 @@ void Display()
 	
 	glutSwapBuffers();
 	
-	if(screenshot) {
-		printf("Taking screenshot\n");
-		
-		// Screenshot_JPEG("output.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
-		Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
-		screenshot = false;
-		performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
-		
-		if(auto_quit) {
-			exit(0);
+	if(time_limit) {
+		if(TotalTime > time_limit) {
+			printf("Time limit reached\n");
+			Take_Screenshot();	
 		}
-		else {
-			glutMouseFunc( MouseHandler );
-			glutMotionFunc( MotionHandler );
-		}
+	}
+	else if(screenshot) {
+		printf("Flattening stable\n");
+		Take_Screenshot();	
 	}
 	
 	glutPostRedisplay();
@@ -206,7 +218,7 @@ void Keyboard( unsigned char value, int x, int y )
 			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE );
 			break;
 		case 's':
-			Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
+			Take_Screenshot();
 			break;
 		case '.':
 			printf("Toggling spring display\n");
@@ -246,6 +258,9 @@ int main( int argc, char** argv )
 		 	po::value<string>(&integrator)->default_value("euler"),
 			"point integrator (valid values are \"euler\", \"rk4\" "
 			"and \"midpoint\")")
+		("time-limit,t",
+		 	po::value<float>(&time_limit)->default_value(0),
+			"restrict the total simulation time (0=disabled)")
 		("no-auto-start,s",
 			"don't automatically play script file")
 		("no-auto-quit,q",
