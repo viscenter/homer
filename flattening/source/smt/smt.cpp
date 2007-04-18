@@ -205,6 +205,23 @@ void Display()
 	glutPostRedisplay();
 }
 
+void Print_Controls()
+{
+	cout << "\nKeyboard shortcuts:\n" <<
+			"\tq\texit\n" <<
+			"\tr,R\trun script\n" <<
+			"\tp\trun simulation\n" <<
+			"\te,o\tpause simulation\n" <<
+			"\ts\ttake screenshot\n" <<
+			"\t.\ttoggle spring display\n" <<
+			"\t,\ttoggle vertex display\n" <<
+			"\t?\tprint this message\n" <<
+			"\nMouse controls:\n" <<
+			"\tleft-click\tfree-rotate around document\n" <<
+			"\tright-click\tchange distance\n" <<
+			"\tmiddle-click\trotate around x-axis\n\n";
+}
+
 void Keyboard( unsigned char value, int x, int y )
 {
 	switch( value )
@@ -246,6 +263,9 @@ void Keyboard( unsigned char value, int x, int y )
 			printf("Toggling vertex display\n");
 			performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
 			vertices = !vertices;
+			break;
+		case '?':
+			Print_Controls();
 			break;
 	}
 	glutPostRedisplay();
@@ -339,6 +359,9 @@ int main( int argc, char** argv )
 	if(!auto_start) {
 		Toggle_Mouse(true);
 	}
+
+	Print_Controls();
+	
 	// glutIdleFunc( Idle );
 	glutMainLoop();
 	return 0;
