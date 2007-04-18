@@ -142,6 +142,9 @@ void MotionHandler( int x, int y )
 		case GLUT_RIGHT_BUTTON:
 			zoom(mouseY - y);
 			break;
+		case GLUT_MIDDLE_BUTTON:
+			rotate(mouseX - x, 0);
+			break;
 		default:
 			break;
 	}
@@ -150,6 +153,17 @@ void MotionHandler( int x, int y )
 	mouseY = y;
 
 	glutPostRedisplay();
+}
+
+void Toggle_Mouse(bool enable) {
+	if(enable) {
+		glutMouseFunc( MouseHandler );
+		glutMotionFunc( MotionHandler );
+	}
+	else {
+		glutMouseFunc( NULL );
+		glutMotionFunc( NULL );
+	}
 }
 
 void Take_Screenshot()
@@ -164,9 +178,7 @@ void Take_Screenshot()
 		exit(0);
 	}
 	else {
-		glutMouseFunc( MouseHandler );
-		glutMotionFunc( MotionHandler );
-	}
+		}
 }
 
 void Display()
@@ -199,8 +211,7 @@ void Keyboard( unsigned char value, int x, int y )
 	{
 		case 'r': case 'R': 
 			performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
-			glutMouseFunc( NULL );
-			glutMotionFunc( NULL );
+			Toggle_Mouse(false);
 			break;
 		case 'q': 
 			printf("Quitting...\n");
@@ -208,7 +219,13 @@ void Keyboard( unsigned char value, int x, int y )
 		case 'p':
 			printf("Running simulation\n");
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
-			break;	
+			break;
+		case 'o':
+		case 'e':
+			printf("Pausing simulation\n");
+			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE ); 
+			Toggle_Mouse(true);
+			break;
 		case 'g':
 			printf("Enabling gravity\n");
 			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE );
@@ -320,8 +337,7 @@ int main( int argc, char** argv )
 	glutReshapeFunc( ReshapeCanvas );
 	glutKeyboardFunc( Keyboard );
 	if(!auto_start) {
-		glutMouseFunc( MouseHandler );
-		glutMotionFunc( MotionHandler );
+		Toggle_Mouse(true);
 	}
 	// glutIdleFunc( Idle );
 	glutMainLoop();
