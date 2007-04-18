@@ -156,7 +156,7 @@ void setWorldSize( float x, float y, float z );
 		int  CheckForCollisions( tParticle	*system );
 		void ResolveCollisions( tParticle	*system );
 		void CompareBuffer( int size, float *buffer,float x, float y );
-		void CheckDistance( void );
+		void CheckDistance( float DeltaTime );
 };
 
 #endif // !defined(_PhysEnv_H)
