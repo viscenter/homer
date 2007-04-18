@@ -188,34 +188,34 @@ void Keyboard( unsigned char value, int x, int y )
 			glutMouseFunc( NULL );
 			glutMotionFunc( NULL );
 			break;
-		case 'q': exit(0);
-		case 'p': printf("Running simulation\n");
-				  performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
-				  break;	
-		case 'g': printf("Using gravity\n");
-				  performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE ); break;
-		case 'G': performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE ); break;
-		
-		case 'b': printf("Adjusting gravity\n");
-				  performAction( PERFORM_ACTION_ADJUST_GRAVITY_Y, -1000 ); break;
-		case 'n': printf("Committed properties\n");
-				  performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE ); break;
-		
-		case 's': performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE ); screenshot = true; break;
+		case 'q': 
+			printf("Quitting...\n");
+			exit(0);
+		case 'p':
+			printf("Running simulation\n");
+			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
+			break;	
+		case 'g':
+			printf("Enabling gravity\n");
+			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE );
+			break;
+		case 'G':
+			printf("Disabling gravity\n");
+			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE );
+			break;
+		case 's':
+			Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
+			break;
 		case '.':
-				  printf("Toggling spring display\n");
-				  performAction( PERFORM_ACTION_DISPLAY_SPRINGS, springs ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
-				  springs = !springs;
-				  break;
+			printf("Toggling spring display\n");
+			performAction( PERFORM_ACTION_DISPLAY_SPRINGS, springs ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
+			springs = !springs;
+			break;
 		case ',':
-				  printf("Toggling vertex display\n");
-				  performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
-				  vertices = !vertices;
-				  break;
-		case 'j':
-				  printf("Taking screenshot\n");
-				  Screenshot_JPEG("test.jpg",WINDOW_WIDTH,WINDOW_HEIGHT,90);
-				  break;
+			printf("Toggling vertex display\n");
+			performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
+			vertices = !vertices;
+			break;
 	}
 	glutPostRedisplay();
 }
