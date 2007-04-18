@@ -213,6 +213,7 @@ void Print_Controls()
 			"\tp\trun simulation\n" <<
 			"\te,o\tpause simulation\n" <<
 			"\ts\ttake screenshot\n" <<
+			"\tt\tprint current simulation time\n" <<
 			"\t.\ttoggle spring display\n" <<
 			"\t,\ttoggle vertex display\n" <<
 			"\t?\tprint this message\n" <<
@@ -229,6 +230,9 @@ void Keyboard( unsigned char value, int x, int y )
 		case 'r': case 'R': 
 			performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
 			Toggle_Mouse(false);
+			break;
+		case 't':
+			cout << "Current time: " << TotalTime << endl;
 			break;
 		case 'q': 
 			printf("Quitting...\n");
