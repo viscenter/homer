@@ -35,6 +35,8 @@ extern GLint width, height;
 int mouse_state;
 int mouseX = 0, mouseY = 0;
 
+float TotalTime = 0.0f;
+
 void init(char *meshfile, char *texturefile, char *scriptfile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
