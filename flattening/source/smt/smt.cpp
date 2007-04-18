@@ -27,7 +27,7 @@ bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 
 bool auto_start = true, auto_quit = true;
 
-string output_filename;
+string output_filename, integrator;
 int output_width, output_height;
 
 extern GLint width, height;
@@ -69,12 +69,28 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	performAction( PERFORM_ACTION_ADJUST_SPRING_CONSTANT, 2500 );
 	performAction( PERFORM_ACTION_ADJUST_SPRING_DAMPING, 100 );
 	performAction( PERFORM_ACTION_ADJUST_USER_FORCE_MAG, 100000 );
+
+	if(integrator.compare("rk4") == 0) {
+		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, RK4_INTEGRATOR); 
+	}
+	else if(integrator.compare("euler") == 0) {
+		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, EULER_INTEGRATOR); 
+	}
+	else if(integrator.compare("midpoint") == 0) {
+		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, MIDPOINT_INTEGRATOR); 
+	}
+	else {
+		printf("Invalid integrator type specified.\n");
+		exit(1);
+	}
+
 	performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, PERFORM_ACTION_FALSE );
 	performAction( PERFORM_ACTION_DISPLAY_VERTICES, PERFORM_ACTION_FALSE );
 	if(auto_start) {
 		performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
 	}
+
 }
 
 void rotate( int deltaX, int deltaY )
@@ -174,8 +190,8 @@ void Keyboard( unsigned char value, int x, int y )
 			break;
 		case 'q': exit(0);
 		case 'p': printf("Running simulation\n");
-				  performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); break;
-		
+				  performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
+				  break;	
 		case 'g': printf("Using gravity\n");
 				  performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE ); break;
 		case 'G': performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE ); break;
@@ -224,6 +240,10 @@ int main( int argc, char** argv )
 		("output-geometry,g",
 		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
 			"output image file geometry in WxH format")
+		("integrator,i",
+		 	po::value<string>(&integrator)->default_value("euler"),
+			"point integrator (valid values are \"euler\", \"rk4\" "
+			"and \"midpoint\")")
 		("no-auto-start,s",
 			"don't automatically play script file")
 		("no-auto-quit,q",
