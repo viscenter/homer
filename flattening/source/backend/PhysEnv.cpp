@@ -44,8 +44,6 @@
 #include "manuModel.h"
 #include "smc.h"
 
-extern bool screenshot;
-
 extern manuModel *manu;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1521,11 +1519,14 @@ void CPhysEnv::ResolveCollisions( tParticle *system )
 	}
 }
 
+
 void CPhysEnv::CheckDistance( float DeltaTime )
 {
 	float magx = 0.0f, magy = 0.0f, magz = 0.0f;
+
+	extern bool screenshot;
+	extern float TotalTime;
 	
-	static float TotalTime = 0.0f;
 	TotalTime += DeltaTime;
 	
 	tParticle *source = m_CurrentSys;	// CURRENT STATE OF PARTICLE
