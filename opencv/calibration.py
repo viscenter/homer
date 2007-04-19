@@ -42,14 +42,39 @@ def findCorners(im, dim):
       IPL_DEPTH_8U, 1 )
     cvPyrDown(im,im2)
     found,corners = findCorners(im2,dim)
-    if found == False:
-      return found,corners
     for i in corners:
       i.x *= 2
       i.y *= 2
     subpix = cvSize(11,11)
-  else:
-    return found,corners
+
+  if found:
+    if corners[0].x + corners[0].y > \
+       corners[dim.width*dim.height-1].x + corners[dim.width*dim.height-1].y:
+      for i in range(dim.width*dim.height/2):
+        tmp = corners[i]
+        corners[i] = corners[dim.width*dim.height-1-i]
+        corners[dim.width*dim.height-1-i] = tmp
+    if corners[dim.width-1].x - corners[0].x < \
+       corners[dim.width*(dim.height-1)].x - corners[0].x or \
+       corners[dim.width-1].y - corners[0].y > \
+       corners[dim.width*(dim.height-1)].y - corners[0].y:
+      for x in range(dim.width):
+        for y in range(x,dim.height):
+          tmp = corners[x*dim.width+y]
+          corners[x*dim.width+y] = corners[y*dim.width+x]
+          corners[y*dim.width+x] = tmp
+    if corners[0].x > corners[dim.width-1].x:
+      for x in range(dim.width):
+        for y in range(dim.height/2):
+          tmp = corners[x*dim.width+y]
+          corners[x*dim.width+y] = corners[(x+1)*dim.width-y-1]
+          corners[(x+1)*dim.width-y-1] = tmp
+    if corners[0].y > corners[dim.width*(dim.height-1)].y:
+      for y in range(dim.height):
+        for x in range(dim.width/2):
+          tmp = corners[x*dim.width+y]
+          corners[x*dim.width+y] = corners[(dim.height-1-x)*dim.width+y]
+          corners[(dim.height-1-x)*dim.width+y] = tmp
 
   corners = cvFindCornerSubPix( im, corners, subpix, cvSize(-1,-1), \
     cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,100,0.001))
