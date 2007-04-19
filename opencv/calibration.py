@@ -14,6 +14,7 @@ cvStartWindowThread()
 debugLock = threading.Lock()
 debugEvent = threading.Event()
 calibrated = False
+camSize = cvSize(3504,2336)
 
 def waitKey():
   while (debugEvent.isSet() == False):
@@ -75,6 +76,11 @@ def findCorners(im, dim):
           tmp = corners[x*dim.width+y]
           corners[x*dim.width+y] = corners[(dim.height-1-x)*dim.width+y]
           corners[(dim.height-1-x)*dim.width+y] = tmp
+    for x in range(dim.width):
+      for y in range(x,dim.height):
+        tmp = corners[x*dim.width+y]
+        corners[x*dim.width+y] = corners[y*dim.width+x]
+        corners[y*dim.width+x] = tmp
 
   corners = cvFindCornerSubPix( im, corners, subpix, cvSize(-1,-1), \
     cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,100,0.001))
@@ -120,7 +126,38 @@ def findImages(directory, prefix):
   imgs.sort()
   return imgs
 
+def loadCalib( file ):
+  f = open( file, 'r' )
+  i=0
+  intr = cvCreateMat( 3, 3, CV_64FC1 )
+  dist = cvCreateMat( 4, 1, CV_64FC1 )
+  line = f.readline().strip().split(' ')
+  camSize.width = int(line[0])
+  camSize.height = int(line[1])
+  for i in range(3):
+    line = f.readline().strip().split(' ')
+    intr[i][0] = float(line[0])
+    intr[i][1] = float(line[1])
+    intr[i][2] = float(line[2])
+  line = f.readline().strip().split(' ')
+  for i in range(4):
+    dist[i] = float(line[i])
+  f.close()
+  return intr,dist
+
+def saveCalib( file, intr, dist ):
+  f = open( file, 'w' )
+  f.write( str(camSize.width) +' '+ str(camSize.height) + '\n' )
+  f.write( str(intr[0][0]) +' '+ str(intr[0][1]) +' '+ str(intr[0][2]) + '\n' )
+  f.write( str(intr[1][0]) +' '+ str(intr[1][1]) +' '+ str(intr[1][2]) + '\n' )
+  f.write( str(intr[2][0]) +' '+ str(intr[2][1]) +' '+ str(intr[2][2]) + '\n' )
+  f.write( str(dist[0])+' '+str(dist[1])+' '+str(dist[2])+' '+str(dist[3])+'\n')
+  f.close()
+
 def calibrate( dir, dim=cvSize(7,7), size=25.4 ):
+  calibfile = dir+'/calib.dat'
+  if os.path.exists( calibfile ): return loadCalib(calibfile)
+
   count, points = findAllCorners( findImages(dir,'Image'), dim )
   world = cvCreateMat( count*dim.width*dim.height, 3, CV_64FC1 )
   worldp = [ [ x*size,y*size,0] for y in range(dim.height) for x in range(dim.width) ]
@@ -136,7 +173,9 @@ def calibrate( dir, dim=cvSize(7,7), size=25.4 ):
 
   intr,dist = cvCalibrateCamera2( world, points, counts,\
     camSize, rot, trans )
-  return intr,dist,rot,trans,points,world,counts
+  saveCalib( calibfile, intr, dist )
+  return intr,dist
+#  return intr,dist,rot,trans,points,world,counts
 
 def reproj_error(pts,wld,cnt,intr,dist):
   total = 0
@@ -281,14 +320,8 @@ def mapTexture( file, K,d,r,t ):
 
 def test(dir = 'calib2', im = 'Image_0267.JPG', check='checkers-transform.obj',
     obj_file = 'certificate-wrap-uniform2.obj' ):
-  global results
-  global calibrated
-  if calibrated == False:
-    results = calibrate(dir)
-    calibrated = True
-  K = results[0]
-  d = results[1]
-  reproj_error(results[4],results[5],results[6],K,d)
+  K,d = calibrate(dir)
+  #reproj_error(results[4],results[5],results[6],K,d)
   print 'K', K
   print 'd', d
   r,t = extrinsics(check,dir+'/'+im, K,d)
