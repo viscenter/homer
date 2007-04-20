@@ -178,7 +178,8 @@ void Take_Screenshot()
 		exit(0);
 	}
 	else {
-		}
+		Toggle_Mouse(true);		
+	}
 }
 
 void Display()
