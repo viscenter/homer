@@ -29,18 +29,15 @@ int main( int argc, char * argv[] )
 {
 	CvMat *K = NULL, *d = NULL, *r = NULL, *t = NULL;
 
-	/*
 	if( argc < 5 )
 	{
 		fprintf( stderr, "%s directory checkers image object\n", argv[0] );
 		return 1;
 	}
-	*/
-	char * calib_dir = "04-18";//argv[1];
-	char * checkers  = "chs/checkers.obj";//argv[2];
-	char * check_img = "chs/Image_0112.JPG";//argv[3];
-	//char * obj_file  = "chs/test.obj";//"04-18/grid.obj";//argv[4];
-	char * obj_file = argv[1];
+	char * calib_dir = argv[1];
+	char * checkers  = argv[2];
+	char * check_img = argv[3];
+	char * obj_file  = argv[4];
 
 	if( !calibrate( calib_dir, &K, &d ) )
 	{
@@ -149,7 +146,6 @@ int findCorners( IplImage * im, CvSize dim, CvPoint2D32f * corners )
         }
       }
     }
-		*/
     for( int x=0; x<dim.width; ++x )
     {
       for( int y=x; y<dim.height; ++y )
@@ -159,6 +155,7 @@ int findCorners( IplImage * im, CvSize dim, CvPoint2D32f * corners )
         corners[y*dim.width+x] = tmp;
       }
     }
+		*/
   }
 
   cvFindCornerSubPix( im, corners, count, subpix, cvSize(-1,-1),
@@ -330,6 +327,8 @@ int readCheckers( const char * file, const char * image, CvSize dim,
 
   FILE * f = fopen( file, "r" );
   char buf[1024];
+  CvPoint3D32f last = cvPoint3D32f( 0, 0, 0 );
+  bool reversed = false, transposed = false, mirrored = false;
 	while( f && !feof(f) )
   {
     fgets( buf, sizeof(buf), f );
@@ -340,7 +339,44 @@ int readCheckers( const char * file, const char * image, CvSize dim,
         CvPoint3D32f c;
         sscanf( buf, "v %f %f %f\n", &c.x, &c.y, &c.z );
 				printf( "%f %f %f\n",c.x,c.y,c.z);
-        check.push_back( c );
+
+        // If within 2 mm of last point, assume duplicate
+        if( (last.x-c.x)*(last.x-c.x)+
+            (last.y-c.y)*(last.y-c.y)+
+            (last.z-c.z)*(last.z-c.z) < 4. )
+        {
+          // To properly orient the Faro coordinates with the image,
+          // scan the second point from the left on the top row,
+          // as seen from the camera, twice.  We then determine the
+          // appropriate transformation to line up the two point sets.
+          switch( check.size() )
+          {
+            case 2:
+              reversed = false; transposed = false; mirrored = false; break;
+            case 3:
+              reversed = false; transposed = false; mirrored = true; break;
+            case 5:
+              reversed = false; transposed = true; mirrored = false; break;
+            case 8:
+              reversed = false; transposed = true; mirrored = true; break;
+            case 9:
+              reversed = true; transposed = true; mirrored = true; break;
+            case 12:
+              reversed = true; transposed = true; mirrored = false; break;
+            case 14:
+              reversed = true; transposed = false; mirrored = true; break;
+            case 15:
+              reversed = true; transposed = false; mirrored = false; break;
+            default:
+              printf("ignoring duplicate point\n");
+          }
+        }
+        // Add to list
+        else
+        {
+          check.push_back( c );
+        }
+        last = c;
       }
     }
   }
@@ -350,6 +386,43 @@ int readCheckers( const char * file, const char * image, CvSize dim,
   if( size && size == (int)size )
   {
 		printf("Size %f\n",size);
+    if( reversed )
+    {
+      printf("Reversed\n");
+      for( size_t i=0; i<check.size()/2; ++i )
+      {
+        CvPoint3D32f p = check[i];
+        check[i] = check[check.size()-i-1];
+        check[check.size()-i-1] = p;
+      }
+    }
+    if( mirrored )
+    {
+      printf("Mirrored\n");
+      for( size_t i=0; i<size; ++i )
+      {
+        for( size_t j=0; j<size/2; ++j )
+        {
+          CvPoint3D32f p = check[(size_t)(i*size+j)];
+          check[(size_t)(i*size+j)] = check[(size_t)((i+1)*size-j-1)];
+          check[(size_t)((i+1)*size-j-1)] = p;
+        }
+      }
+    }
+    if( transposed )
+    {
+      printf("Transposed\n");
+      for( int i=0; i<size; ++i )
+      {
+        for( int j=i; j<size; ++j )
+        {
+          CvPoint3D32f p = check[(size_t)(i*size+j)];
+          check[(size_t)(i*size+j)] = check[(size_t)(j*size+i)];
+          check[(size_t)(j*size+i)] = p;
+        }
+      }
+    }
+
     int dist = ((int)size-1)*(int)sqrt((double)check.size());
     CvPoint3D32f vect = cvPoint3D32f(
         ( check[check.size()-1].x - check[0].x ) /dist,
@@ -380,9 +453,9 @@ int readCheckers( const char * file, const char * image, CvSize dim,
 				(*checkers)->data.fl[3*i+2] = check[i].z;
 			}
 			int i=0;
-      for( int x=0; x<dim.width; x+=2 )
+      for( int y=0; y<dim.height; y+=2 )
       {
-        for( int y=0; y<dim.height; y+=2 )
+        for( int x=0; x<dim.width; x+=2 )
         {
 					(*image_checkers)->data.fl[2*i+0] = corners[y*dim.width+x].x;
 					(*image_checkers)->data.fl[2*i+1] = corners[y*dim.width+x].y;
