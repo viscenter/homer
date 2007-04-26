@@ -1603,12 +1603,29 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 						RK4Integrate( TargetTime - CurrentTime );
 						break;
 				}
-			}
-			
-			CheckDistance(TargetTime - CurrentTime);
+			}	
 		}
 		
 		collisionState = CheckForCollisions( m_TargetSys );
+		
+		if(running) {
+			if( collisionState != PENETRATING ) {
+				CheckDistance(TargetTime - CurrentTime);
+			}
+			else if( fabs( ( ( CurrentTime + TargetTime ) / 2.0f ) 
+						- CurrentTime ) <= EPSILON ) {
+				printf("Expanding world size...\n");
+			
+				m_WorldSizeY += 0.25f;
+
+				// MAKE THE TOP PLANE (CEILING)
+				m_CollisionPlane[0].d = m_WorldSizeY / 2.0f;
+
+				// MAKE THE BOTTOM PLANE (FLOOR)
+				m_CollisionPlane[1].d = m_WorldSizeY / 2.0f;
+				break;
+			}
+		}
 		
 		if( collisionState == PENETRATING )
 		{
