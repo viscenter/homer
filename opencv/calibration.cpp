@@ -133,29 +133,18 @@ int findCorners( IplImage * im, CvSize dim, CvPoint2D32f * corners )
         }
       }
     }
-		/*
-    if( corners[0].y < corners[dim.width*(dim.height-1)].y )
+    if( corners[0].y > corners[dim.width*(dim.height-1)].y )
     {
-      for( int y=0; y<dim.height; ++y )
+      for( int x=0; x<dim.width; ++x )
       {
-        for( int x=0; x<dim.width/2; ++x )
+        for( int y=0; y<dim.height/2; ++y )
         {
-          tmp = corners[x*dim.width+y];
-          corners[x*dim.width+y] = corners[(dim.height-1-x)*dim.width+y];
-          corners[(dim.height-1-x)*dim.width+y] = tmp;
+          tmp = corners[y*dim.width+x];
+          corners[y*dim.width+x] = corners[(dim.height-1-y)*dim.width+x];
+          corners[(dim.height-1-y)*dim.width+x] = tmp;
         }
       }
     }
-    for( int x=0; x<dim.width; ++x )
-    {
-      for( int y=x; y<dim.height; ++y )
-      {
-        tmp = corners[x*dim.width+y];
-        corners[x*dim.width+y] = corners[y*dim.width+x];
-        corners[y*dim.width+x] = tmp;
-      }
-    }
-		*/
   }
 
   cvFindCornerSubPix( im, corners, count, subpix, cvSize(-1,-1),
