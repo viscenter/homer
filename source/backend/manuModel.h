@@ -58,9 +58,10 @@ struct Triangle
 class manuModel
 {
 	public:
-		texture *firstTexture, *currentTexture;
+		texture *firstTexture, *currentTexture, *texArray;
 		int numberOfTextures, numberOfTrianglesInATexture;
-		
+		int tileW, tileH;
+
 		pixel *image;
 		long nVer, nQuad, nEdges, nTrig;
 		int xSamples, ySamples;
@@ -91,10 +92,12 @@ class manuModel
 		~manuModel();
 		bool readMesh(char *filename);
 		void readTexture(char *filename);
+		void readTextureSplit(char *filename);
 		
 		void replaceTexture(char *filename);
 		void initTexture( texture *inTexture );
 		void BindNextTexture();
+		void BindArrTexture(int position);
 		double edgeLengthSum();
 		void makeImage();
 		int readPPM( char* filename, unsigned char* &image, int &width, int &height );

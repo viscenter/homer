@@ -173,6 +173,52 @@ CPhysEnv::~CPhysEnv()
 //free(lockedArray);
 }
 
+void bindTextureSplit(int idx)
+{
+	int tileW = manu->tileW;
+	int tileH = manu->tileH;
+
+	int imaW = manu->imaW, imaH = manu->imaH;
+	
+	double u_scaled = manu->verList[idx].u1*imaW/(tileW*TEXW);
+	double v_scaled = manu->verList[idx].v1*imaH/(tileH*TEXH);
+
+	int cell_x = (int)floor((double)tileW * u_scaled);
+	int cell_y = (int)floor((double)tileH * (1.0 - v_scaled));
+	cell_y = (tileH - 1) - cell_y;
+
+	manu->BindArrTexture((cell_y * tileW) + cell_x);
+}
+
+void renderTextureSplit(int idx)
+{
+	int tileW = manu->tileW;
+	int tileH = manu->tileH;
+
+	int imaW = manu->imaW, imaH = manu->imaH;
+	
+	double u_scaled = manu->verList[idx].u1*imaW/(tileW*TEXW);
+	double v_scaled = manu->verList[idx].v1*imaH/(tileH*TEXH);
+
+	int cell_x = (int)floor((double)tileW * u_scaled);
+	int cell_y = (int)floor((double)tileH * (1.0 - v_scaled));
+	// cell_y = (tileH - 1) - cell_y;
+
+	double cell_percent_x = ((double)1.0/(double)tileW);
+	double cur_u = (u_scaled-(cell_percent_x*(double)cell_x))/cell_percent_x;
+	// cur_u = cur_u * (imaW/(tileW*TEXW));
+	
+	double cell_percent_y = ((double)1.0/(double)tileH);
+	double cur_v = (((double)1.0-v_scaled)-(cell_percent_y*(double)cell_y))/cell_percent_y;
+	// cur_v = (((double)1.0) - cur_v) * (imaH/(tileH*TEXH));
+	cur_v = (double)1.0 - cur_v;
+	// cur_v = cur_v * ((double)imaH/(double)(tileH*TEXH));
+
+	// printf("%f,%f\t%f,%f\n",u_scaled,v_scaled,cur_u,cur_v);
+	
+	glTexCoord2f( cur_u, cur_v );
+}
+
 void CPhysEnv::RenderWorld()
 {
 	tParticle	*tempParticle;
@@ -389,26 +435,52 @@ void CPhysEnv::RenderWorld()
 				glDisable(GL_TEXTURE_2D);
 		}
 		else{
-			manu->BindNextTexture();
-			int imaW = manu->imaW, imaH = manu->imaH;
-			for (int i = 0; i < manu->nTrig; i++ ){
-				glBegin(GL_POLYGON);
-				int idx;
-				idx = manu->trigList[i].idx1;
-				tempParticle = &m_CurrentSys[idx];
-				glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-				glVertex3fv((float *)&tempParticle->pos);
-				idx = manu->trigList[i].idx2;
-				tempParticle = &m_CurrentSys[idx];
-				glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-				glVertex3fv((float *)&tempParticle->pos);
-				idx = manu->trigList[i].idx3;
-				tempParticle = &m_CurrentSys[idx];
-				glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-				glVertex3fv((float *)&tempParticle->pos);
-				glEnd();
+			// THIS
+			if(manu->texArray != NULL) {
+				// manu->BindArrTexture(0);
+				for (int i = 0; i < manu->nTrig; i++ ){
+					int idx;
+					idx = manu->trigList[i].idx1;
+					bindTextureSplit(idx);	
+					glBegin(GL_POLYGON);
+					tempParticle = &m_CurrentSys[idx];
+					renderTextureSplit(idx);	
+					glVertex3fv((float *)&tempParticle->pos);
+					idx = manu->trigList[i].idx2;
+					tempParticle = &m_CurrentSys[idx];
+					renderTextureSplit(idx);	
+					glVertex3fv((float *)&tempParticle->pos);
+					idx = manu->trigList[i].idx3;
+					tempParticle = &m_CurrentSys[idx];
+					renderTextureSplit(idx);	
+					glVertex3fv((float *)&tempParticle->pos);
+					glEnd();
+				}
+				glDisable(GL_TEXTURE_2D);
+
 			}
-			glDisable(GL_TEXTURE_2D);
+			else {
+				manu->BindNextTexture();
+				int imaW = manu->imaW, imaH = manu->imaH;
+				for (int i = 0; i < manu->nTrig; i++ ){
+					glBegin(GL_POLYGON);
+					int idx;
+					idx = manu->trigList[i].idx1;
+					tempParticle = &m_CurrentSys[idx];
+					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+					glVertex3fv((float *)&tempParticle->pos);
+					idx = manu->trigList[i].idx2;
+					tempParticle = &m_CurrentSys[idx];
+					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+					glVertex3fv((float *)&tempParticle->pos);
+					idx = manu->trigList[i].idx3;
+					tempParticle = &m_CurrentSys[idx];
+					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+					glVertex3fv((float *)&tempParticle->pos);
+					glEnd();
+				}
+				glDisable(GL_TEXTURE_2D);
+			}
 		}
 	 } // end if (manu)
 

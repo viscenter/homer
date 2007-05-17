@@ -19,10 +19,10 @@ export JAVAC	:=	javac
 UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
-LIBS	:=	-lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
+LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
-CFLAGS	:=	-O3
+CFLAGS	:=	-O3 -DDEBUG
 
 # Linux-specific flags
 ifneq (,$(findstring Linux,$(UNAME)))	
@@ -121,7 +121,8 @@ DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
 			$(SMTOFILES:.o=.d) \
 			$(SMTJAVAOFILES:.o=.d)
 
-all: $(SMTBIN) smtjava
+all: $(SMTBIN)
+#smtjava
 
 $(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
 	$(LD) $(LDFLAGS) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
