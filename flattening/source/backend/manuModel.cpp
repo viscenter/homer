@@ -33,6 +33,10 @@ manuModel::manuModel()
 	TRIGTEXRES = 1;
 	NUMTRIGPERROW = 1000;
 	YL_UseTriangularTextureMap = false;
+
+	tileW = 0;
+	tileH = 0;
+	texArray = NULL;
 }
 
 manuModel::~manuModel()
@@ -365,6 +369,53 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	return 0;
 }
 
+void manuModel::readTextureSplit(char *filename)
+{
+	pixel *colorIma;
+	
+	textureFile = filename;
+	readImage( filename, colorIma, imaW, imaH );
+	
+	if( !YL_UseTriangularTextureMap) {
+		if( colorIma != NULL ){
+			tileH = (int)ceil((double) imaH/(double) TEXH);
+			tileW = (int)ceil((double) imaW/(double) TEXW);
+
+			printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
+
+			texArray = (texture*)malloc(sizeof(texture) * tileH * tileW);
+
+			for(int i = 0; i < tileH; i++) {
+				for(int j = 0; j < tileW; j++) {
+					currentTexture = &(texArray[(i * tileW) + j]);
+					currentTexture->nextTexture = NULL;
+					currentTexture->id = textureID++;
+					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
+					for(int h = (i*TEXH); (h < ((i+1)*TEXH)) && (h < imaH); h++) {
+						for(int w = (j*TEXW); (w < ((j+1)*TEXW)) && (w < imaW); w++) {
+							long offset1 = ((h-(i*TEXH)) * TEXW + (w-(j*TEXW))) * 3;
+							long offset2 = (h * imaW + w) * 3;
+														currentTexture->ima[offset1] = colorIma[offset2];
+							currentTexture->ima[offset1+1] = colorIma[offset2+1];
+							currentTexture->ima[offset1+2] = colorIma[offset2+2];
+						}
+					}
+					currentTexture->subIma = colorIma;
+					currentTexture->w = TEXW;
+					currentTexture->h = TEXH;
+					currentTexture->ww = imaW;
+					currentTexture->hh = imaH;
+					textureFormat = COLOR;
+					initTexture( currentTexture );
+				}
+			}
+			if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
+		}
+		else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
+	}
+
+}
+
 void manuModel::readTexture(char *filename)
 {
 	/**************************************************************/
@@ -454,29 +505,32 @@ void manuModel::readTexture(char *filename)
 	currentTexture = firstTexture;
  }
  else{
-  if( colorIma != NULL ){
-	firstTexture = new texture;
-	currentTexture = firstTexture;
-	currentTexture->nextTexture = NULL;
-	currentTexture->id = textureID;
-    currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
-	for( int h = 0; h < imaH; h++ ){
-		for(int w=0; w < imaW; w++){
-			long offset1 = (h * TEXW + w) * 3;
-			long offset2 = (h * imaW + w) * 3;
-			currentTexture->ima[offset1] = colorIma[offset2];
-			currentTexture->ima[offset1+1] = colorIma[offset2+1];
-			currentTexture->ima[offset1+2] = colorIma[offset2+2];
+	if( (imaH > TEXH) || (imaW > TEXW) ) {
+		readTextureSplit(filename);
+	}	
+	else if( colorIma != NULL ){
+		firstTexture = new texture;
+		currentTexture = firstTexture;
+		currentTexture->nextTexture = NULL;
+		currentTexture->id = textureID;
+			currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
+		for( int h = 0; h < imaH; h++ ){
+			for(int w=0; w < imaW; w++){
+				long offset1 = (h * TEXW + w) * 3;
+				long offset2 = (h * imaW + w) * 3;
+				currentTexture->ima[offset1] = colorIma[offset2];
+				currentTexture->ima[offset1+1] = colorIma[offset2+1];
+				currentTexture->ima[offset1+2] = colorIma[offset2+2];
+			}
 		}
-	}
-	currentTexture->subIma = colorIma;
-	currentTexture->w = TEXW;
-	currentTexture->h = TEXH;
-	currentTexture->ww = imaW;
-	currentTexture->hh = imaH;
-	textureFormat = COLOR;
-	initTexture( currentTexture );
-	if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
+		currentTexture->subIma = colorIma;
+		currentTexture->w = TEXW;
+		currentTexture->h = TEXH;
+		currentTexture->ww = imaW;
+		currentTexture->hh = imaH;
+		textureFormat = COLOR;
+		initTexture( currentTexture );
+		if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
   }
   else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
  } // end else
@@ -524,6 +578,15 @@ void manuModel::BindNextTexture()
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL );
 
 	currentTexture = next;
+}
+
+void manuModel::BindArrTexture(int position)
+{
+	currentTexture = &(texArray[position]);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture( GL_TEXTURE_2D, currentTexture->id );
+	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL );
 }
 
 double manuModel::edgeLengthSum()
