@@ -34,6 +34,7 @@ manuModel::manuModel()
 	NUMTRIGPERROW = 1000;
 	YL_UseTriangularTextureMap = false;
 
+	border = 0;
 	tileW = 0;
 	tileH = 0;
 	texArray = NULL;
@@ -375,11 +376,20 @@ void manuModel::readTextureSplit(char *filename)
 	
 	textureFile = filename;
 	readImage( filename, colorIma, imaW, imaH );
-	
+
+	// as texture resolution goes up, border size should go up
+	// as nVer goes up, border size should go down
+	// border = (int)((((double)(imaH*imaW))/(double) nVer)/2);
+	border = 128;
+	printf("border width: %d\n",border);
+
 	if( !YL_UseTriangularTextureMap) {
 		if( colorIma != NULL ){
-			tileH = (int)ceil((double) imaH/(double) TEXH);
-			tileW = (int)ceil((double) imaW/(double) TEXW);
+			int border_h = TEXH-border;
+			int border_w = TEXW-border;
+
+			tileH = (int)ceil((double) (imaH-TEXH)/((double) border_h))+1;
+			tileW = (int)ceil((double) (imaW-TEXW)/((double) border_w))+1;
 
 			printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
 
@@ -391,11 +401,11 @@ void manuModel::readTextureSplit(char *filename)
 					currentTexture->nextTexture = NULL;
 					currentTexture->id = textureID++;
 					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
-					for(int h = (i*TEXH); (h < ((i+1)*TEXH)) && (h < imaH); h++) {
-						for(int w = (j*TEXW); (w < ((j+1)*TEXW)) && (w < imaW); w++) {
-							long offset1 = ((h-(i*TEXH)) * TEXW + (w-(j*TEXW))) * 3;
+					for(int h = (i*border_h); (h < (i*border_h+TEXH)) && (h < imaH); h++) {
+						for(int w = (j*border_w); (w < (j*border_w+TEXW)) && (w < imaW); w++) {
+							long offset1 = ((h-(i*border_h)) * TEXW + (w-(j*border_w))) * 3;
 							long offset2 = (h * imaW + w) * 3;
-														currentTexture->ima[offset1] = colorIma[offset2];
+							currentTexture->ima[offset1] = colorIma[offset2];
 							currentTexture->ima[offset1+1] = colorIma[offset2+1];
 							currentTexture->ima[offset1+2] = colorIma[offset2+2];
 						}

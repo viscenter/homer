@@ -60,7 +60,7 @@ class manuModel
 	public:
 		texture *firstTexture, *currentTexture, *texArray;
 		int numberOfTextures, numberOfTrianglesInATexture;
-		int tileW, tileH;
+		int tileW, tileH, border;
 
 		pixel *image;
 		long nVer, nQuad, nEdges, nTrig;

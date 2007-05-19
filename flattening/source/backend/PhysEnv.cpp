@@ -173,6 +173,150 @@ CPhysEnv::~CPhysEnv()
 //free(lockedArray);
 }
 
+void renderBestTextureSplit(int idx, int cell_x, int cell_y)
+{
+	// render a tex coord for u,v for cell_x,cell_y
+	int tileW = manu->tileW;
+	int tileH = manu->tileH;
+	int border = manu->border;
+
+	int imaW = manu->imaW, imaH = manu->imaH;
+	
+	int orig_tileH = (int)ceil((double) imaH/(double) TEXH);
+	int orig_tileW = (int)ceil((double) imaW/(double) TEXW);
+
+	int orig_pixelH = orig_tileH * TEXH;
+	int orig_pixelW = orig_tileW * TEXW;
+
+	double orig_sizeH = (double)1.0/(double)orig_tileH;
+	double orig_sizeW = (double)1.0/(double)orig_tileW;
+
+	double cur_u = manu->verList[idx].u1;
+	double cur_v = manu->verList[idx].v1;
+
+	// scaled position in a non-bordered tiling
+	double u_scaled = cur_u*imaW/(orig_tileW*TEXW);
+	double v_scaled = cur_v*imaH/(orig_tileH*TEXH);
+
+	// cut position
+	cur_u = u_scaled - ((cell_x * (TEXW - border))/orig_pixelW);
+	cur_v = v_scaled - ((cell_y * (TEXH - border))/orig_pixelH);
+
+	// scale the cut position to the local tile
+	double cell_percent_x = ((double)1.0/(double)tileW);
+	cur_u = cur_u/cell_percent_x;
+	cur_u -= cell_x;
+	cur_u += ((double)border/(double)TEXW)*cell_x;
+	double cell_percent_y = ((double)1.0/(double)tileH);
+	cur_v = cur_v/cell_percent_y;
+	cur_v -= cell_y;
+	cur_v += ((double)border/(double)TEXH)*cell_y;
+	// cur_v = (double)1.0 - cur_v;
+
+	// cur_u = (u_scaled-(cell_percent_x*(double)cell_x))/cell_percent_x;
+	// cur_u = cur_u * (imaW/(tileW*TEXW));
+	
+	// cur_v = (((double)1.0-v_scaled)-(cell_percent_y*(double)cell_y))/cell_percent_y;
+	// cur_v -= (border/TEXH)*cell_y;
+	// cur_v = (double)1.0 - cur_v;
+
+	/*
+	if(cell_x || cell_y) {
+		printf("%d,%d:\n",cell_x,cell_y);
+		printf("%f,%f\t%f,%f\n",u_scaled,v_scaled,cur_u,cur_v);
+	}
+	*/
+
+	glTexCoord2f( cur_u, cur_v );
+}
+
+void bindBestTextureSplit(int idx1, int idx2, int idx3, int &best_x, int &best_y)
+{
+	int tileW = manu->tileW;
+	int tileH = manu->tileH;
+	int border = manu->border;
+
+	int imaW = manu->imaW, imaH = manu->imaH;
+	
+	int orig_tileH = (int)ceil((double) imaH/(double) TEXH);
+	int orig_tileW = (int)ceil((double) imaW/(double) TEXW);
+
+	int orig_pixelH = orig_tileH * TEXH;
+	int orig_pixelW = orig_tileW * TEXW;
+
+	double orig_sizeH = (double)1.0/(double)orig_tileH;
+	double orig_sizeW = (double)1.0/(double)orig_tileW;
+
+	int indexes[3];
+
+	indexes[0] = idx1;
+	indexes[1] = idx2;
+	indexes[2] = idx3;
+
+	// array containing votes for each texture tile
+	// 3 = all three vertices are within this tile
+	int* votes = (int*)calloc(tileW*tileH,sizeof(int));
+
+	for(int i = 0; i < 3; i++) {
+		double cur_u = manu->verList[indexes[i]].u1;
+		double cur_v = manu->verList[indexes[i]].v1;
+
+		// scaled position in a non-bordered tiling
+		double u_scaled = cur_u*imaW/(orig_tileW*TEXW);
+		double v_scaled = cur_v*imaH/(orig_tileH*TEXH);
+		// v_scaled = (double)1.0 - v_scaled;
+
+		for(int y = 0; y < tileH; y++) {
+			if(((y * (TEXH - border)) <= (v_scaled * orig_pixelH)) &&
+				 ((y * (TEXH - border) + TEXH) > (v_scaled * orig_pixelH)) ) {
+				for(int x = 0; x < tileW; x++) {
+					// check to see if u,v is in this tile
+					if(((x * (TEXW - border)) <= (u_scaled * orig_pixelW)) &&
+						 ((x * (TEXW - border) + TEXW) > (u_scaled * orig_pixelW)) ) {
+						// votes[(((tileH - 1) - y) * tileW) + x]++;
+						votes[(y * tileW) + x]++;
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	for(int i = 0; i < 3; i++) {
+		double cur_u = manu->verList[indexes[i]].u1;
+		double cur_v = manu->verList[indexes[i]].v1;
+
+		// scaled position in a non-bordered tiling
+		double u_scaled = cur_u*imaW/(orig_tileW*TEXW);
+		double v_scaled = cur_v*imaH/(orig_tileH*TEXH);
+		v_scaled = (double)1.0 - v_scaled;
+
+		printf("\t%f,%f",u_scaled,v_scaled);
+	}
+	printf(":\n");
+	*/
+
+	bool fully_contained = false;
+
+	for(int y = 0; (y < tileH) && (!fully_contained); y++) {
+		for(int x = 0; (x < tileW) && (!fully_contained); x++) {
+			if(votes[(y * tileW) + x] == 3) {
+				best_x = x;
+				best_y = y;
+				manu->BindArrTexture((y * tileW) + x);
+				fully_contained = true;
+			}
+			// printf("\t%d,%d\t%d\n",x,y,votes[(y * tileW) + x]);
+		}
+	}
+
+	if(!fully_contained) {
+		printf("Found not fully contained polygon\n");
+	}
+
+	free(votes);
+}
+
 void bindTextureSplit(int idx)
 {
 	int tileW = manu->tileW;
@@ -187,6 +331,7 @@ void bindTextureSplit(int idx)
 	int cell_y = (int)floor((double)tileH * (1.0 - v_scaled));
 	cell_y = (tileH - 1) - cell_y;
 
+	printf("bound: %d,%d\n\n",cell_x,cell_y);
 	manu->BindArrTexture((cell_y * tileW) + cell_x);
 }
 
@@ -439,20 +584,29 @@ void CPhysEnv::RenderWorld()
 			if(manu->texArray != NULL) {
 				// manu->BindArrTexture(0);
 				for (int i = 0; i < manu->nTrig; i++ ){
-					int idx;
+					int idx, cur_x, cur_y;
+					bindBestTextureSplit(manu->trigList[i].idx1,
+							manu->trigList[i].idx2, manu->trigList[i].idx3,cur_x,cur_y);
+
 					idx = manu->trigList[i].idx1;
-					bindTextureSplit(idx);	
+					// bindTextureSplit(idx);	
 					glBegin(GL_POLYGON);
 					tempParticle = &m_CurrentSys[idx];
-					renderTextureSplit(idx);	
+					// renderTextureSplit(idx);	
+					renderBestTextureSplit(idx,cur_x,cur_y);	
+
 					glVertex3fv((float *)&tempParticle->pos);
 					idx = manu->trigList[i].idx2;
 					tempParticle = &m_CurrentSys[idx];
-					renderTextureSplit(idx);	
+					// renderTextureSplit(idx);	
+					renderBestTextureSplit(idx,cur_x,cur_y);	
+
 					glVertex3fv((float *)&tempParticle->pos);
 					idx = manu->trigList[i].idx3;
 					tempParticle = &m_CurrentSys[idx];
-					renderTextureSplit(idx);	
+					// renderTextureSplit(idx);		
+					renderBestTextureSplit(idx,cur_x,cur_y);	
+
 					glVertex3fv((float *)&tempParticle->pos);
 					glEnd();
 				}
