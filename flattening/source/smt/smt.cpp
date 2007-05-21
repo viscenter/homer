@@ -171,7 +171,6 @@ void Take_Screenshot()
 	printf("Taking screenshot\n");
 		
 	Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
-	screenshot = false;
 	performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
 		
 	if(auto_quit) {
@@ -192,15 +191,17 @@ void Display()
 	
 	glutSwapBuffers();
 	
-	if(time_limit) {
+	if(time_limit && screenshot) {
 		if(TotalTime > time_limit) {
 			printf("Time limit reached\n");
-			Take_Screenshot();	
+			Take_Screenshot();
+			screenshot = false;	
 		}
 	}
 	else if(screenshot) {
 		printf("Flattening stable\n");
 		Take_Screenshot();	
+		screenshot = false;
 	}
 	
 	glutPostRedisplay();
@@ -347,6 +348,10 @@ int main( int argc, char** argv )
 	}
 	if(vm.count("no-auto-quit")) {
 		auto_quit = false;
+	}
+
+	if(time_limit) {
+		screenshot = true;
 	}
 
 	string::size_type x_position = output_geometry.find("x");
