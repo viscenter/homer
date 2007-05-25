@@ -18,7 +18,7 @@ int findAllCorners( const char * dir, CvSize dim, CvMat ** corners );
 bool loadCalib( const char * file, CvMat * K, CvMat * d );
 bool saveCalib( const char * file, const CvMat * K, const CvMat * d );
 bool calibrate( const char * dir, CvMat **K, CvMat **d,
-		CvSize dim = cvSize(7,7), float size = 25.4 );
+		CvSize dim = cvSize(7,7), float size = 25 );
 int readCheckers( const char * file, const char * image, CvSize dim,
     CvMat ** checkers, CvMat ** image_checkers );
 bool extrinsics( const char * file, const char * image, CvSize dim,
@@ -159,9 +159,11 @@ int select( const struct dirent * d )
 
 int findAllCorners( const char * dir, CvSize dim, CvMat ** points )
 {
+	printf("Finding all corners on %s\n",dir);
 	struct dirent ** files = NULL;
 	int c = scandir( dir, &files, select, alphasort );
 
+	printf("c: %d\n",c);
   std::vector<CvPoint2D32f *> point_stack;
   // read directory
   // for each file in directory
@@ -170,6 +172,7 @@ int findAllCorners( const char * dir, CvSize dim, CvMat ** points )
 		std::string file = dir; file += '/'; file += files[f]->d_name;
 		free( files[f] );
 
+		printf("Trying to load %s\n",file.c_str());
     IplImage * im = cvLoadImage( file.c_str(), CV_LOAD_IMAGE_GRAYSCALE );
 		if( !im ) continue;
 		printf("Loading %s\n", file.c_str() );
@@ -539,6 +542,13 @@ bool mapTexture( const char * file, CvMat *K, CvMat *d, CvMat *r, CvMat *t )
 		printf("projecting points\n");
 		cvProjectPoints2( points, r, t, K, d, texture );
 		printf("size %d %d\n", camSize.width, camSize.height);
+		CvMat * rot = cvCreateMat( 3, 3, CV_32FC1 );
+		CvMat * rod = cvCreateMat( 3, 1, CV_32FC1 );
+		rod->data.fl[0] = 0; rod->data.fl[1] = 0; rod->data.fl[2] = -.5;
+		cvRodrigues2( rod, rot );
+		cvMatMul( points, rot, points );
+		cvReleaseMat( &rod );
+		cvReleaseMat( &rot );
 
 		fprintf( output, "Vertices %d\n", verts );
 		for( int i=0; i<verts; ++i )
