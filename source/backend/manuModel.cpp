@@ -380,7 +380,7 @@ void manuModel::readTextureSplit(char *filename)
 	// as texture resolution goes up, border size should go up
 	// as nVer goes up, border size should go down
 	// border = (int)((((double)(imaH*imaW))/(double) nVer)/2);
-	border = 128;
+	border = 512;
 	printf("border width: %d\n",border);
 
 	if( !YL_UseTriangularTextureMap) {
