@@ -115,6 +115,7 @@ pixel *MBLoadBitmap(char *name, int &w, int &h)
     fread(&bihead,1,sizeof(BITMAPINFOHEADER),fp);
 
 #ifdef DEBUG
+/*
 	printf( "biBitCount %i     \n"
 			"biClrImportant  %i \n"
 			"biClrUsed       %i \n"
@@ -140,6 +141,7 @@ pixel *MBLoadBitmap(char *name, int &w, int &h)
 		case BI_RLE4      : printf("rle 4        \n"); break;
 		case BI_BITFIELDS : printf("bitfields    \n"); break;
 	}
+*/
 #endif
  
 	linebytes=bihead.biWidth * (bihead.biBitCount/8);
