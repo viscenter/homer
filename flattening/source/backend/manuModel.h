@@ -92,7 +92,7 @@ class manuModel
 		~manuModel();
 		bool readMesh(char *filename);
 		void readTexture(char *filename);
-		void readTextureSplit(char *filename);
+		void readTextureSplit(pixel *colorIma);
 		
 		void replaceTexture(char *filename);
 		void initTexture( texture *inTexture );

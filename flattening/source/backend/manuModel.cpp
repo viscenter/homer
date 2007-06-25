@@ -370,12 +370,12 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	return 0;
 }
 
-void manuModel::readTextureSplit(char *filename)
+void manuModel::readTextureSplit(pixel *colorIma)
 {
-	pixel *colorIma;
+	// pixel *colorIma;
 	
-	textureFile = filename;
-	readImage( filename, colorIma, imaW, imaH );
+	// textureFile = filename;
+	// readImage( filename, colorIma, imaW, imaH );
 
 	// as texture resolution goes up, border size should go up
 	// as nVer goes up, border size should go down
@@ -419,9 +419,9 @@ void manuModel::readTextureSplit(char *filename)
 					initTexture( currentTexture );
 				}
 			}
-			if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
+			if( SMT_DEBUG ) printf("Read texture size %i %i \n", imaW, imaH );
 		}
-		else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
+		else if( SMT_DEBUG ) printf("Can't split texture \n" );
 	}
 
 }
@@ -516,7 +516,7 @@ void manuModel::readTexture(char *filename)
  }
  else{
 	if( (imaH > TEXH) || (imaW > TEXW) ) {
-		readTextureSplit(filename);
+		readTextureSplit(colorIma);
 	}	
 	else if( colorIma != NULL ){
 		firstTexture = new texture;
