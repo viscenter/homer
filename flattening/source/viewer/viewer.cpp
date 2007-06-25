@@ -35,11 +35,6 @@ float flattening = 0;
 
 // User IDs for callbacks
 enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKELING_ID };
-/*
-#define FLATTENING_ID 305
-#define FILE_SELECT_ID 307
-#define WRINKELING_ID		 306
-*/
 
 int main_window;
 
@@ -134,10 +129,11 @@ void update_once(void)
 	view_rotate[13] = 0;
 	view_rotate[14] = 0;
 	view_rotate[15] = 1;
-	
+/*	
 	obj_pos[0] = 1.48;
 	obj_pos[1] = 0.685;
  	obj_pos[2] = 8.964999;
+*/
 
 	glutPostRedisplay();
 }
@@ -233,7 +229,8 @@ void Display()
 
 	glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
-  glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 15.0 );
+  // glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 15.0 );
+	gluPerspective( 60.0, xy_aspect, 1.0, 2000.0 );
 
   glMatrixMode( GL_MODELVIEW );
 
@@ -363,7 +360,8 @@ void MyReshapeCanvas( int width, int height )
 
 	ReshapeCanvas(width,height);
 
-	xy_aspect = (float)tw / (float)th; 
+	xy_aspect = (float)tw / (float)th;
+	glutPostRedisplay();
 }
 
 void setup_glui(void)
@@ -394,6 +392,7 @@ void setup_glui(void)
     glui->add_translation( "Translate", GLUI_TRANSLATION_XY, obj_pos );
   trans_xy->set_speed( .005 );
 
+	obj_pos[2] = 8.964999;
   GLUI_Translation *trans_z = 
     glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2] );
   trans_z->set_speed( .005 );
@@ -521,7 +520,7 @@ int main( int argc, char** argv )
 	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
 
 	glutDisplayFunc( Display );
-	glutReshapeFunc( MyReshapeCanvas );
+	//  glutReshapeFunc( MyReshapeCanvas );
 	glutKeyboardFunc( Keyboard );
 	if(!auto_start) {
 		Toggle_Mouse(true);
