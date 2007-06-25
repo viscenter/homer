@@ -37,7 +37,7 @@ manuModel::manuModel()
 	border = 0;
 	tileW = 0;
 	tileH = 0;
-	texArray = NULL;
+	texArray = false;
 }
 
 manuModel::~manuModel()
@@ -393,11 +393,21 @@ void manuModel::readTextureSplit(pixel *colorIma)
 
 			printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
 
-			texArray = (texture*)malloc(sizeof(texture) * tileH * tileW);
+			texArray = true;
 
 			for(int i = 0; i < tileH; i++) {
 				for(int j = 0; j < tileW; j++) {
-					currentTexture = &(texArray[(i * tileW) + j]);
+					if( firstTexture == NULL )
+					{
+						firstTexture = new texture;
+						currentTexture = firstTexture;
+					}
+					else
+					{
+						texture *newTexture = new texture;
+						currentTexture->nextTexture = newTexture;
+						currentTexture = newTexture;
+					}
 					currentTexture->nextTexture = NULL;
 					currentTexture->id = textureID++;
 					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
@@ -592,7 +602,10 @@ void manuModel::BindNextTexture()
 
 void manuModel::BindArrTexture(int position)
 {
-	currentTexture = &(texArray[position]);
+	currentTexture = firstTexture;
+	for(int i = 0; (i < position) && (currentTexture->nextTexture != NULL); i++) {
+		currentTexture = currentTexture->nextTexture;
+	}
 
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture( GL_TEXTURE_2D, currentTexture->id );

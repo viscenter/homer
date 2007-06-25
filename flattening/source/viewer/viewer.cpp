@@ -311,6 +311,7 @@ void control_cb(int control)
 	switch( control )
 	{
 		case FILE_SELECT_ID:
+			DeleteSystem();
 			InitFromFileNames(fileBox->get_int_val());
 			break;
 		default:
