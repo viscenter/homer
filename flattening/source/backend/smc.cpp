@@ -253,12 +253,12 @@ void selectionBoxWindow()
 // Formerly GLvoid COGLView::drawScene(GLvoid)
 void RenderScene()
 {
-	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+	// glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
 	
-	glPushMatrix();
+	// glPushMatrix();
 	
-	glLoadIdentity();
-	changeAngle();
+	// glLoadIdentity();
+	// changeAngle();
 	
 	if( m_PhysEnv != NULL && m_Skeleton != NULL )
 	{
@@ -281,7 +281,7 @@ void RenderScene()
 		
 		m_PhysEnv->RenderWorld();
 	}
-	glPopMatrix();
+	// glPopMatrix();
 		
 	if( drawSelectionBox == 1 )
 	{
