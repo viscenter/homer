@@ -22,7 +22,7 @@ VIEWEROUT	:= viewer
 UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
-LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
+LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
 CFLAGS	:=	-O3 -DDEBUG
