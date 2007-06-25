@@ -15,6 +15,10 @@
 
 #include <glui.h>
 
+#include <errno.h>
+#include <dirent.h>
+#include <vector>
+
 namespace po = boost::program_options;
 
 #include <iostream>
@@ -33,8 +37,12 @@ float obj_pos[] = { 1.48, 0.685, 8.964999 };
 int	  show_plane = 0;
 float flattening = 0;
 
+GLUI_Listbox *fileBox;
+
 // User IDs for callbacks
 enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKELING_ID };
+
+vector<string> fileNames;
 
 int main_window;
 
@@ -53,7 +61,7 @@ int mouseX = 0, mouseY = 0;
 float TotalTime = 0.0f;
 float time_limit;
 
-void init(char *meshfile, char *texturefile, char *scriptfile)
+void init(char *meshfile, char *texturefile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glShadeModel(GL_SMOOTH);
@@ -75,7 +83,7 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	
 	LoadFilename( meshfile, 0 ); // meshFilename
 	LoadFilename( texturefile, 1 ); // textureFilename
-	LoadFilename( scriptfile, 3 ); // scriptFilename
+	// LoadFilename( scriptfile, 3 ); // scriptFilename
 	
 	Init();
 
@@ -219,6 +227,32 @@ void Display()
 	glutPostRedisplay();
 }
 
+void getFileNames()
+{
+	DIR *pdir;
+	struct dirent *pent;
+
+	pdir = opendir("venetus");
+	if(!pdir)	{
+		fprintf(stderr,"Failed to open directory. Terminating.\n");
+		exit(1);
+	}
+	errno = 0;
+	while(pent=readdir(pdir)) {
+		string file = pent->d_name;
+		if(file[0] != '.') {
+			if(file.find(".surf",0) != string::npos) {
+				fileNames.push_back(file);
+			}
+		}
+	}
+	if(errno) {
+		fprintf(stderr,"opendir() failed.  Terminating.\n");
+		exit(1);
+	}
+	closedir(pdir);
+}
+
 void print_camera(void)
 {
 	for(int i = 0; i < 16; i++) {
@@ -260,8 +294,29 @@ void Keyboard( unsigned char value, int x, int y )
 	glutPostRedisplay();
 }
 
+void InitFromFileNames(int pos) {
+	string selected_file, corresponding_image;
+	string directory = "venetus/";
+
+	selected_file = fileNames[fileBox->get_int_val()];
+	printf( "%s\n", selected_file.c_str() );
+	corresponding_image = selected_file;
+	corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg");
+	printf( "%s\n", corresponding_image.c_str() );
+	init((char *)(directory + selected_file).c_str(), (char *)(directory + corresponding_image).c_str());
+}
+
 void control_cb(int control)
 {
+	switch( control )
+	{
+		case FILE_SELECT_ID:
+			InitFromFileNames(fileBox->get_int_val());
+			break;
+		default:
+			break;
+	}
+	glutPostRedisplay();
 }
 
 void MyReshapeCanvas( int width, int height )
@@ -285,13 +340,13 @@ void setup_glui(void)
 
 
    //******Add list box containing image file names**********
-  GLUI_Listbox *fileBox = glui->add_listbox( "File: ", NULL, FILE_SELECT_ID, control_cb);
-  //getFileNames();
-  // for(int i=0; i<MAX_FILES && fileNames[i] != ""; i++)
-  //{
-	//fileBox->add_item( i, (char*)fileNames[i].c_str() );
-  //}
-	fileBox->add_item(0, "default"); 
+  fileBox = glui->add_listbox( "File: ", NULL, FILE_SELECT_ID, control_cb);
+  getFileNames();
+  for(unsigned int i=0; i < fileNames.size(); i++)
+  {
+		fileBox->add_item( i, (char*)fileNames[i].c_str() );
+  }
+	// fileBox->add_item(0, "default"); 
   glui->add_statictext( "" );
 
 
@@ -367,9 +422,6 @@ int main( int argc, char** argv )
 		("image-file,I",
 		 	po::value<string>(&image_file)->default_value("data/ski-1.ppm"),
 			"input image file")
-		("script-file,S",
-		 	po::value<string>(&script_file)->default_value("data/test.ssf"),
-			"input script file")
 		;
 	
 	po::options_description cmdline_options;
@@ -378,7 +430,6 @@ int main( int argc, char** argv )
 	po::positional_options_description pd;
 	pd.add("mesh-file",1);
 	pd.add("image-file",1);
-	pd.add("script-file",1);
 	
 	po::variables_map vm;
 	po::store(po::command_line_parser(argc, argv).
@@ -397,7 +448,8 @@ int main( int argc, char** argv )
 
 	setup_glui();
 	
-	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
+	InitFromFileNames(0);
+	// init((char *)mesh_file.c_str(),	(char *)image_file.c_str());
 
 	glutDisplayFunc( Display );
 	//  glutReshapeFunc( MyReshapeCanvas );
