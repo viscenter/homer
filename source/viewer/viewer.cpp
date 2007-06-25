@@ -88,27 +88,11 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	performAction( PERFORM_ACTION_ADJUST_SPRING_DAMPING, 100 );
 	performAction( PERFORM_ACTION_ADJUST_USER_FORCE_MAG, 100000 );
 
-	if(integrator.compare("rk4") == 0) {
-		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, RK4_INTEGRATOR); 
-	}
-	else if(integrator.compare("euler") == 0) {
-		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, EULER_INTEGRATOR); 
-	}
-	else if(integrator.compare("midpoint") == 0) {
-		performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, MIDPOINT_INTEGRATOR); 
-	}
-	else {
-		printf("Invalid integrator type specified.\n");
-		exit(1);
-	}
+	performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, EULER_INTEGRATOR); 
 
 	performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, PERFORM_ACTION_FALSE );
 	performAction( PERFORM_ACTION_DISPLAY_VERTICES, PERFORM_ACTION_FALSE );
-	if(auto_start) {
-		performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
-	}
-
 }
 
 void update_once(void)
@@ -208,29 +192,14 @@ void Toggle_Mouse(bool enable) {
 	}
 }
 
-void Take_Screenshot()
-{
-	printf("Taking screenshot\n");
-		
-	Screenshot_TR((char *)output_filename.c_str(),output_width,output_height);
-	performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
-		
-	if(auto_quit) {
-		exit(0);
-	}
-	else {
-		Toggle_Mouse(true);		
-	}
-}
-
 void Display()
 {
 	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
 
 	glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
-  // glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 15.0 );
-	gluPerspective( 60.0, xy_aspect, 1.0, 2000.0 );
+  glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 15.0 );
+	// gluPerspective( 60.0, xy_aspect, 1.0, 2000.0 );
 
   glMatrixMode( GL_MODELVIEW );
 
@@ -247,38 +216,7 @@ void Display()
 	
 	glutSwapBuffers();
 	
-	if(time_limit && screenshot) {
-		if(TotalTime > time_limit) {
-			printf("Time limit reached\n");
-			Take_Screenshot();
-			screenshot = false;	
-		}
-	}
-	else if(screenshot) {
-		printf("Flattening stable\n");
-		Take_Screenshot();	
-		screenshot = false;
-	}
-	
 	glutPostRedisplay();
-}
-
-void Print_Controls()
-{
-	cout << "\nKeyboard shortcuts:\n" <<
-			"\tq\texit\n" <<
-			"\tr,R\trun script\n" <<
-			"\tp\trun simulation\n" <<
-			"\te,o\tpause simulation\n" <<
-			"\ts\ttake screenshot\n" <<
-			"\tt\tprint current simulation time\n" <<
-			"\t.\ttoggle spring display\n" <<
-			"\t,\ttoggle vertex display\n" <<
-			"\t?\tprint this message\n" <<
-			"\nMouse controls:\n" <<
-			"\tleft-click\tfree-rotate around document\n" <<
-			"\tright-click\tchange distance\n" <<
-			"\tmiddle-click\trotate around x-axis\n\n";
 }
 
 void print_camera(void)
@@ -297,13 +235,6 @@ void Keyboard( unsigned char value, int x, int y )
 {
 	switch( value )
 	{
-		case 'r': case 'R': 
-			performAction( PERFORM_ACTION_PLAY_SCRIPT_FILE, PERFORM_ACTION_TRUE );
-			Toggle_Mouse(false);
-			break;
-		case 't':
-			cout << "Current time: " << TotalTime << endl;
-			break;
 		case 'q': 
 			printf("Quitting...\n");
 			exit(0);
@@ -317,22 +248,6 @@ void Keyboard( unsigned char value, int x, int y )
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE ); 
 			Toggle_Mouse(true);
 			break;
-		case 'g':
-			printf("Enabling gravity\n");
-			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_TRUE );
-			break;
-		case 'G':
-			printf("Disabling gravity\n");
-			performAction( PERFORM_ACTION_SET_USE_GRAVITY, PERFORM_ACTION_FALSE );
-			break;
-		case 's':
-			Take_Screenshot();
-			break;
-		case '.':
-			printf("Toggling spring display\n");
-			performAction( PERFORM_ACTION_DISPLAY_SPRINGS, springs ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
-			springs = !springs;
-			break;
 		case ',':
 			printf("Toggling vertex display\n");
 			performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
@@ -340,9 +255,6 @@ void Keyboard( unsigned char value, int x, int y )
 			break;
 		case 'z':
 			print_camera();
-			break;
-		case '?':
-			Print_Controls();
 			break;
 	}
 	glutPostRedisplay();
@@ -445,23 +357,6 @@ int main( int argc, char** argv )
 	po::options_description generic("Program options");
 	generic.add_options()
 		("help", "produce help message")
-		("output,o",
-		 	po::value<string>(&output_filename)->default_value("output.png"),
-			"output image file")
-		("output-geometry,g",
-		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
-			"output image file geometry in WxH format")
-		("integrator,i",
-		 	po::value<string>(&integrator)->default_value("euler"),
-			"point integrator (valid values are \"euler\", \"rk4\" "
-			"and \"midpoint\")")
-		("time-limit,t",
-		 	po::value<float>(&time_limit)->default_value(0),
-			"restrict the total simulation time (0=disabled)")
-		("no-auto-start,s",
-			"don't automatically play script file")
-		("no-auto-quit,q",
-			"don't automatically quit after screenshot")
 		;
 
 	po::options_description hidden("Hidden options");
@@ -497,21 +392,6 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
-	if(vm.count("no-auto-start")) {
-		auto_start = false;
-	}
-	if(vm.count("no-auto-quit")) {
-		auto_quit = false;
-	}
-
-	if(time_limit) {
-		screenshot = true;
-	}
-
-	string::size_type x_position = output_geometry.find("x");
-	output_width = atoi(output_geometry.substr(0,(int)x_position).c_str());
-	output_height = atoi(output_geometry.substr((int)x_position + 1).c_str());
-
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
 
@@ -528,8 +408,6 @@ int main( int argc, char** argv )
 
 	update_once();
 
-	Print_Controls();
-	
 	// glutIdleFunc( Idle );
 	glutMainLoop();
 	
