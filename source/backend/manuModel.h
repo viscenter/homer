@@ -58,7 +58,8 @@ struct Triangle
 class manuModel
 {
 	public:
-		texture *firstTexture, *currentTexture, *texArray;
+		texture *firstTexture, *currentTexture;
+		bool texArray;
 		int numberOfTextures, numberOfTrianglesInATexture;
 		int tileW, tileH, border;
 

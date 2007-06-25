@@ -581,7 +581,7 @@ void CPhysEnv::RenderWorld()
 		}
 		else{
 			// THIS
-			if(manu->texArray != NULL) {
+			if(manu->texArray == true) {
 				// manu->BindArrTexture(0);
 				for (int i = 0; i < manu->nTrig; i++ ){
 					int idx, cur_x, cur_y;
