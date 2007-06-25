@@ -40,7 +40,7 @@ float flattening = 0;
 GLUI_Listbox *fileBox;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKELING_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID };
 
 vector<string> fileNames;
 
@@ -310,6 +310,10 @@ void control_cb(int control)
 {
 	switch( control )
 	{
+		case FLATTENING_ID:
+			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
+			break;
+		case WRINKLING_ID:
 		case FILE_SELECT_ID:
 			DeleteSystem();
 			InitFromFileNames(fileBox->get_int_val());
@@ -358,12 +362,12 @@ void setup_glui(void)
 
   GLUI_Translation *trans_xy = 
     glui->add_translation( "Translate", GLUI_TRANSLATION_XY, obj_pos );
-  trans_xy->set_speed( .005 );
+  trans_xy->set_speed( .01 );
 
 	obj_pos[2] = 8.964999;
   GLUI_Translation *trans_z = 
     glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2] );
-  trans_z->set_speed( .005 );
+  trans_z->set_speed( .01 );
 
   glui->add_statictext( "" );
  
@@ -382,7 +386,7 @@ void setup_glui(void)
 
   glui->add_button_to_panel( actions_panel, "Flatten" , FLATTENING_ID, control_cb);
 
-  glui->add_button_to_panel( actions_panel, "Wrinkle" , WRINKELING_ID, control_cb);
+  glui->add_button_to_panel( actions_panel, "Wrinkle" , WRINKLING_ID, control_cb);
 
   glui->add_statictext( "" );
   
