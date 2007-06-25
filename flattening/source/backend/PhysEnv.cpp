@@ -369,10 +369,10 @@ void CPhysEnv::RenderWorld()
 	tParticle	*tempParticle;
 	tSpring		*tempSpring;
 
-	//*
 	// FIRST DRAW THE WORLD CONTAINER  
 	glColor3f(1.0f,1.0f,1.0f);
-    // do a big linestrip to get most of edges
+  	/*  
+		// do a big linestrip to get most of edges
     glBegin(GL_LINE_STRIP);
         glVertex3f(-m_WorldSizeX/2.0f, m_WorldSizeY/2.0f,-m_WorldSizeZ/2.0f);
         glVertex3f( m_WorldSizeX/2.0f, m_WorldSizeY/2.0f,-m_WorldSizeZ/2.0f);
@@ -392,7 +392,6 @@ void CPhysEnv::RenderWorld()
         glVertex3f(-m_WorldSizeX/2.0f, m_WorldSizeY/2.0f, m_WorldSizeZ/2.0f);
         glVertex3f(-m_WorldSizeX/2.0f,-m_WorldSizeY/2.0f, m_WorldSizeZ/2.0f);
     glEnd();
-	//*/
     
     // draw floor
     glBegin(GL_QUADS);
@@ -402,6 +401,7 @@ void CPhysEnv::RenderWorld()
         glVertex3f( m_WorldSizeX/2.0f,-m_WorldSizeY/2.0f-0.1, m_WorldSizeZ/2.0f);
         glVertex3f(-m_WorldSizeX/2.0f,-m_WorldSizeY/2.0f-0.1, m_WorldSizeZ/2.0f);
     glEnd();
+		*/
 	
 	if (m_ParticleSys)
 	{
