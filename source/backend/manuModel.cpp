@@ -45,11 +45,15 @@ manuModel::~manuModel()
 	if( verList != NULL ) delete verList;
 	
 	texture *next = firstTexture->nextTexture;
+	delete firstTexture->ima;
+	// delete firstTexture->subIma;
 	delete firstTexture;
 	while( next != NULL )
 	{
 		currentTexture = next;
 		next = currentTexture->nextTexture;
+		delete currentTexture->ima;
+		// delete currentTexture->subIma;
 		delete currentTexture;
 	}
 }
@@ -555,6 +559,8 @@ void manuModel::readTexture(char *filename)
   else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
  } // end else
 
+ // no sense in keeping the subIma/colorIma around, we don't actually use it
+ delete colorIma;
 }
 
 
