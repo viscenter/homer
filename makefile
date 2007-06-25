@@ -71,7 +71,7 @@ BACKENDSOURCES	:=	source/backend
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
-INCLUDES		:=	$(BACKENDSOURCES) $(SMTSOURCES) $(SMTJAVASOURCES)
+INCLUDES		:=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES)
 
 CFLAGS		+= $(INCLUDE)
 CXXFLAGS	:= $(CFLAGS)
@@ -86,6 +86,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(SMTSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(VIEWERSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir))
 
 BACKENDCPPFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
@@ -102,7 +103,7 @@ export LD	:=	$(CXX)
 export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o) \
 							$(BACKENDCFILES:.c=.o)
 export SMTOFILES		:=	$(SMTCPPFILES:.cpp=.o)
-export VIEWEROFILES		:=	$(SMTCPPFILES:.cpp=.o)
+export VIEWEROFILES		:=	$(VIEWERCPPFILES:.cpp=.o)
 export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
 export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
