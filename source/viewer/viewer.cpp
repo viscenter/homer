@@ -318,6 +318,13 @@ void InitFromFileNames(int pos) {
 	init((char *)(directory + selected_file).c_str(), (char *)(directory + corresponding_image).c_str());
 }
 
+void DisableGLUIandInit(void)
+{
+	glui->disable();
+	InitFromFileNames(fileBox->get_int_val());
+	glui->enable();
+}
+
 void control_cb(int control)
 {
 	switch( control )
@@ -332,12 +339,13 @@ void control_cb(int control)
 			// glui->disable();
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
 			break;
-		case WRINKLING_ID:
 		case FILE_SELECT_ID:
-			glui->disable();
 			DeleteSystem();
-			InitFromFileNames(fileBox->get_int_val());
-			glui->enable();
+			DisableGLUIandInit();
+			break;
+		case WRINKLING_ID:
+			NewSystem();
+			DisableGLUIandInit();
 			break;
 		default:
 			break;

@@ -469,7 +469,7 @@ GLvoid drawModel(t_Bone *curBone)
 
 void NewSystem()
 {
-	manu = NULL;
+	// manu = NULL;
 	m_PhysEnv->FreeSystem();
 	m_SimRunning = false;
 	if (m_Skeleton->childCnt > 0)
@@ -482,6 +482,13 @@ void NewSystem()
 		free(m_Skeleton->children);
 		m_Skeleton->childCnt = 0;
 	}
+	
+	delete m_PhysEnv;
+	delete m_Skeleton;
+	m_PhysEnv = NULL;
+	m_Skeleton = NULL;
+
+	if( scriptFile != NULL ) fclose( scriptFile );
 }
 
 void DeleteSystem()
@@ -783,11 +790,19 @@ manuSizeY = -1;
 	{ // For the Regular Triangular Mesh
 		// Insert my HACK HERE
 		// Read in my manuscript format.
-		manu = new manuModel();
-		manu->SMT_DEBUG = SMT_DEBUG;
-		manu->YL_UseQuad = YL_UseQuad;
-		manu->readMesh(meshfile);
-		manu->readTexture(texturefile);
+		if(manu == NULL) {
+			manu = new manuModel();
+			manu->SMT_DEBUG = SMT_DEBUG;
+			manu->YL_UseQuad = YL_UseQuad;
+			manu->readMesh(meshfile);
+			manu->readTexture(texturefile);
+		}
+		else {
+			if(manu->verList != NULL) {
+				delete manu->verList;
+			}
+			manu->readMesh(meshfile);
+		}
 		//	  m_PhysEnv->setWorldY( manu->maxz * 6 );
 		m_PhysEnv->setWorldY( manu->maxz * 2 );
 		m_PhysEnv->setWorldSize( (manu->maxx - manu->minx) * 2, (manu->maxz - manu->minz) * 1, (manu->maxy- manu->miny) * 2 );
