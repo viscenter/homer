@@ -32,11 +32,12 @@ using namespace std;
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
 // float view_rotate[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-float obj_pos[] = { 1.48, 0.685, 8.964999 };
-// float obj_pos[] = { 0.0, 0.0, 0.0 };
+float initial_obj_pos[] = { 1.48, 0.685, 8.964999 };
+float obj_pos[] = { 0.0, 0.0, 0.0 };
 int	  show_plane = 0;
 float flattening = 0;
 
+GLUI *glui;
 GLUI_Listbox *fileBox;
 
 // User IDs for callbacks
@@ -121,12 +122,12 @@ void update_once(void)
 	view_rotate[13] = 0;
 	view_rotate[14] = 0;
 	view_rotate[15] = 1;
-/*	
+
+	/*
 	obj_pos[0] = 1.48;
 	obj_pos[1] = 0.685;
  	obj_pos[2] = 8.964999;
-*/
-
+	*/
 	glutPostRedisplay();
 }
 
@@ -213,6 +214,7 @@ void Display()
 
   glLoadIdentity();
   glTranslatef( 0.0, 0.0, -2.6f );
+  glTranslatef( initial_obj_pos[0], initial_obj_pos[1], -initial_obj_pos[2] ); 
   glTranslatef( obj_pos[0], obj_pos[1], -obj_pos[2] ); 
   glMultMatrixf( view_rotate );
 
@@ -222,9 +224,14 @@ void Display()
 
 	glPopMatrix();
 	
+	if(screenshot) {
+		screenshot = false;
+		glui->enable();
+	}
+	
 	glutSwapBuffers();
 	
-	glutPostRedisplay();
+	// glutPostRedisplay();
 }
 
 void getFileNames()
@@ -311,12 +318,15 @@ void control_cb(int control)
 	switch( control )
 	{
 		case FLATTENING_ID:
+			glui->disable();
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
 			break;
 		case WRINKLING_ID:
 		case FILE_SELECT_ID:
+			glui->disable();
 			DeleteSystem();
 			InitFromFileNames(fileBox->get_int_val());
+			glui->enable();
 			break;
 		default:
 			break;
@@ -336,11 +346,20 @@ void MyReshapeCanvas( int width, int height )
 	glutPostRedisplay();
 }
 
+void MyGlutIdle( void )
+{
+	if(glutGetWindow() != main_window) {
+		glutSetWindow(main_window);
+	}
+
+	glutPostRedisplay();
+}
+
 void setup_glui(void)
 {
 	GLUI_Master.set_glutReshapeFunc(MyReshapeCanvas);
   /*** Create the side subwindow ***/
-  GLUI *glui = GLUI_Master.create_glui_subwindow( main_window, 
+  glui = GLUI_Master.create_glui_subwindow( main_window, 
 					    GLUI_SUBWINDOW_LEFT );
 
 
@@ -364,7 +383,7 @@ void setup_glui(void)
     glui->add_translation( "Translate", GLUI_TRANSLATION_XY, obj_pos );
   trans_xy->set_speed( .01 );
 
-	obj_pos[2] = 8.964999;
+	// obj_pos[2] = 8.964999;
   GLUI_Translation *trans_z = 
     glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2] );
   trans_z->set_speed( .01 );
@@ -400,7 +419,7 @@ void setup_glui(void)
   glui->set_main_gfx_window( main_window );
 
   /**** We register the idle callback with GLUI, *not* with GLUT ****/
-  // GLUI_Master.set_glutIdleFunc( myGlutIdle );
+  GLUI_Master.set_glutIdleFunc( MyGlutIdle );
 }
 
 int main( int argc, char** argv )
