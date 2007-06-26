@@ -90,7 +90,7 @@ CPhysEnv::CPhysEnv()
 	m_Ksh	= 5.0f;		// HOOK'S SPRING CONSTANT
 	m_Ksd	= 0.1f;		// SPRING DAMPING CONSTANT
 	
-	vertexPointSize = 2.0f;
+	vertexPointSize = 5.0f;
 
 	// CREATE THE SIZE FOR THE SIMULATION WORLD
 	m_WorldSizeX = 15.0f;
@@ -407,12 +407,12 @@ void CPhysEnv::RenderWorld()
 	{
 		if (m_Spring && m_DrawSprings)
 		{
-			glLineWidth(1);
+			glLineWidth(2);
 			
 
 			glBegin(GL_LINES);
 
-			glColor3f(0.5f,0.5f,0.5f);
+			glColor3f(0.0f,1.0f,0.0f);
 
 			tempSpring = m_Spring;
 
