@@ -51,9 +51,12 @@ struct Triangle
 // #define TEXW 2048
 // #define TEXH 2048
 
-#define TEXW 4096
-#define TEXH 4096
+// #define TEXW 4096
+// #define TEXH 4096
 // #define TEXD 128
+
+extern GLint TEXW;
+extern GLint TEXH;
 
 class manuModel
 {
