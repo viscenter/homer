@@ -34,14 +34,15 @@ float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.69
 // float view_rotate[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
 float initial_obj_pos[] = { 1.48, 0.685, 8.964999 };
 float obj_pos[] = { 0.0, 0.0, 0.0 };
-int	  show_plane = 0;
+int	  show_vertices = 0;
+int	  show_springs = 0;
 float flattening = 0;
 
 GLUI *glui;
 GLUI_Listbox *fileBox;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID };
 
 vector<string> fileNames;
 
@@ -61,6 +62,12 @@ int mouseX = 0, mouseY = 0;
 
 float TotalTime = 0.0f;
 float time_limit;
+
+void ToggleVerticesAndSprings( void )
+{
+	performAction( PERFORM_ACTION_DISPLAY_VERTICES, show_vertices ? PERFORM_ACTION_TRUE : PERFORM_ACTION_FALSE );
+	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, show_springs ? PERFORM_ACTION_TRUE : PERFORM_ACTION_FALSE );
+}
 
 void init(char *meshfile, char *texturefile)
 {
@@ -100,8 +107,7 @@ void init(char *meshfile, char *texturefile)
 	performAction( PERFORM_ACTION_SET_INTEGRATOR_TYPE, EULER_INTEGRATOR); 
 
 	performAction( PERFORM_ACTION_COMMIT_SIM_PROPERTIES, PERFORM_ACTION_TRUE );
-	performAction( PERFORM_ACTION_DISPLAY_SPRINGS, PERFORM_ACTION_FALSE );
-	performAction( PERFORM_ACTION_DISPLAY_VERTICES, PERFORM_ACTION_FALSE );
+	ToggleVerticesAndSprings();
 }
 
 void update_once(void)
@@ -226,7 +232,7 @@ void Display()
 	
 	if(screenshot) {
 		screenshot = false;
-		glui->enable();
+		// glui->enable();
 	}
 	
 	glutSwapBuffers();
@@ -291,7 +297,6 @@ void Keyboard( unsigned char value, int x, int y )
 			break;
 		case ',':
 			printf("Toggling vertex display\n");
-			performAction( PERFORM_ACTION_DISPLAY_VERTICES, vertices ? PERFORM_ACTION_FALSE : PERFORM_ACTION_TRUE );
 			vertices = !vertices;
 			break;
 		case 'z':
@@ -317,8 +322,14 @@ void control_cb(int control)
 {
 	switch( control )
 	{
+		case VERTICES_ID:
+			ToggleVerticesAndSprings();
+			break;
+		case SPRINGS_ID:
+			ToggleVerticesAndSprings();
+			break;
 		case FLATTENING_ID:
-			glui->disable();
+			// glui->disable();
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
 			break;
 		case WRINKLING_ID:
@@ -395,7 +406,8 @@ void setup_glui(void)
  //*********Panel for showing the flat pane and for showing flattening******
   GLUI_Panel *actions_panel = glui->add_panel("Actions");
 
-  glui->add_checkbox_to_panel( actions_panel, "Show Plane", &show_plane ); 
+  glui->add_checkbox_to_panel( actions_panel, "Show Vertices", &show_vertices, VERTICES_ID, control_cb ); 
+  glui->add_checkbox_to_panel( actions_panel, "Show Springs", &show_springs, SPRINGS_ID, control_cb ); 
 
   GLUI_Spinner *flatteningSpinner = 
     glui->add_spinner_to_panel( actions_panel, "Flattening", GLUI_SPINNER_FLOAT,
