@@ -4,7 +4,6 @@
 #include <GLUT/glut.h>
 #include <OpenGL/glu.h>
 #include <OpenGL/glext.h>
-
 #else
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -18,6 +17,9 @@
 
 #include "cv.h"
 #include "highgui.h"
+
+GLint TEXW;
+GLint TEXH;
 
 manuModel::manuModel()
 {
@@ -38,6 +40,10 @@ manuModel::manuModel()
 	tileW = 0;
 	tileH = 0;
 	texArray = false;
+
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &TEXW);
+	TEXH = TEXW;
+	printf("Max texture size is: %d x %d\n",TEXW,TEXH);
 }
 
 manuModel::~manuModel()
