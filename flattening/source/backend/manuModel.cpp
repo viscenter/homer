@@ -43,7 +43,7 @@ manuModel::manuModel()
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &TEXW);
 	TEXH = TEXW;
-	printf("Max texture size is: %d x %d\n",TEXW,TEXH);
+	if( SMT_DEBUG ) printf("Max texture size is: %d x %d\n",TEXW,TEXH);
 }
 
 manuModel::~manuModel()
@@ -391,7 +391,7 @@ void manuModel::readTextureSplit(pixel *colorIma)
 	// as nVer goes up, border size should go down
 	// border = (int)((((double)(imaH*imaW))/(double) nVer)/2);
 	border = 512;
-	printf("border width: %d\n",border);
+	// printf("border width: %d\n",border);
 
 	if( !YL_UseTriangularTextureMap) {
 		if( colorIma != NULL ){
@@ -401,7 +401,7 @@ void manuModel::readTextureSplit(pixel *colorIma)
 			tileH = (int)ceil((double) (imaH-TEXH)/((double) border_h))+1;
 			tileW = (int)ceil((double) (imaW-TEXW)/((double) border_w))+1;
 
-			printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
+			if(SMT_DEBUG) printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
 
 			texArray = true;
 

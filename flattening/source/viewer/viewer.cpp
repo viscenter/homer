@@ -72,7 +72,7 @@ void init(char *meshfile, char *texturefile)
 	
 	glEnable(GL_FRONT_FACE); // both sides of polygon
 	
-	performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
+	// performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DEFINE_MESH_TYPE, PERFORM_ACTION_FALSE );
 	
 	LoadFilename( meshfile, 0 ); // meshFilename
@@ -195,10 +195,10 @@ void InitFromFileNames(int pos) {
 	string directory = "venetus/";
 
 	selected_file = fileNames[fileBox->get_int_val()];
-	printf( "%s\n", selected_file.c_str() );
 	corresponding_image = selected_file;
 	corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg");
-	printf( "%s\n", corresponding_image.c_str() );
+	// printf( "%s\n", selected_file.c_str() );
+	// printf( "%s\n", corresponding_image.c_str() );
 	init((char *)(directory + selected_file).c_str(), (char *)(directory + corresponding_image).c_str());
 }
 
