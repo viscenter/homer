@@ -123,8 +123,22 @@ void update_once(void)
 	glutPostRedisplay();
 }
 
+int frame=0;
+int mytime=0,mytimebase=0;
+
 void Display()
 {
+	/*
+	frame++;
+	mytime=glutGet(GLUT_ELAPSED_TIME);
+	if (mytime - mytimebase > 1000) {
+		printf("FPS:%4.2f\n",
+			frame*1000.0/(mytime-mytimebase));
+		mytimebase = mytime;		
+		frame = 0;
+	}
+	*/
+	
 	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
 
 	glMatrixMode( GL_PROJECTION );
