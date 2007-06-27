@@ -1134,12 +1134,14 @@ void performAction( int action, int value )
 		
 		case PERFORM_ACTION_DISPLAY_SPRINGS:
 		{
+			m_PhysEnv->m_Dirty = true;
 			if( value == PERFORM_ACTION_TRUE ){ m_PhysEnv->m_DrawSprings = true; }
 			else{ m_PhysEnv->m_DrawSprings = false; }
 		} break;
 		
 		case PERFORM_ACTION_DISPLAY_VERTICES:
 		{
+			m_PhysEnv->m_Dirty = true;
 			if( value == PERFORM_ACTION_TRUE ){ m_PhysEnv->m_DrawVertices = true; }
 			else{ m_PhysEnv->m_DrawVertices = false; }
 		} break;
