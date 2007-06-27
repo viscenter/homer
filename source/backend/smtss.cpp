@@ -11,9 +11,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+/*
 extern "C" {
 #include <jpeglib.h>
 }
+*/
 #include "smtss.h"
 #include "tr.h"
 #include "smc.h"
@@ -23,6 +25,7 @@ extern "C" {
 
 extern GLint width, height;
 
+/*
 unsigned char *flipdata( unsigned char *data, int width, int height )
 {
 	unsigned char *temp = data;
@@ -91,6 +94,7 @@ int Screenshot_JPEG( char filename[], int width, int height, int quality )
 	
 	return result;
 }
+*/
 
 extern CPhysEnv *m_PhysEnv;
 
