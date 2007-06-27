@@ -799,7 +799,7 @@ manuSizeY = -1;
 		}
 		else {
 			if(manu->verList != NULL) {
-				delete manu->verList;
+				delete[] manu->verList;
 			}
 			manu->readMesh(meshfile);
 		}

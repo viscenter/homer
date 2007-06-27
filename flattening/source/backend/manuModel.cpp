@@ -566,7 +566,7 @@ void manuModel::readTexture(char *filename)
  } // end else
 
  // no sense in keeping the subIma/colorIma around, we don't actually use it
- delete colorIma;
+ delete[] colorIma;
 }
 
 
