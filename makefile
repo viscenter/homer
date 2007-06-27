@@ -129,11 +129,11 @@ export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile
 
 smt:
 	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile $(SMTBIN)
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile $(SMTBIN)
 
 clean:
 	rm -f $(SMTOUT)
