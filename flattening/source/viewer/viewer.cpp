@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include "smtss.h"
 
-#include <boost/program_options.hpp>
+// #include <boost/program_options.hpp>
 
 #include <glui.h>
 
@@ -19,7 +19,7 @@
 #include <dirent.h>
 #include <vector>
 
-namespace po = boost::program_options;
+// namespace po = boost::program_options;
 
 #include <iostream>
 #include <string>
@@ -452,7 +452,8 @@ int main( int argc, char** argv )
 	glutInitWindowPosition( 0, 0 );
 	
 	glutInit( &argc, argv );
-	
+
+/*	
 	po::options_description generic("Program options");
 	generic.add_options()
 		("help", "produce help message")
@@ -486,6 +487,7 @@ int main( int argc, char** argv )
 		cout << generic << "\n";
 		return 1;
 	}
+*/
 
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
