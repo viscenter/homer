@@ -52,6 +52,8 @@ extern manuModel *manu;
 // INITIALIZE THE SIMULATION WORLD
 CPhysEnv::CPhysEnv()
 {
+	m_Dirty = true;
+	m_DisplayList = 0;
 	m_IntegratorType = RK4_INTEGRATOR;
 
 	m_Pick[0] = -1;
@@ -155,6 +157,10 @@ void CPhysEnv::setWorldSize( float x, float y, float z )
 
 CPhysEnv::~CPhysEnv()
 {
+	if(glIsList(m_DisplayList) == GL_TRUE) {
+		glDeleteLists(m_DisplayList,1);
+	}
+
 	if (m_ParticleSys[0])
 		free(m_ParticleSys[0]);
 	if (m_ParticleSys[1])
@@ -370,7 +376,7 @@ void CPhysEnv::RenderWorld()
 	tSpring		*tempSpring;
 
 	// FIRST DRAW THE WORLD CONTAINER  
-	glColor3f(1.0f,1.0f,1.0f);
+	// glColor3f(1.0f,1.0f,1.0f);
   	/*  
 		// do a big linestrip to get most of edges
     glBegin(GL_LINE_STRIP);
@@ -405,268 +411,279 @@ void CPhysEnv::RenderWorld()
 	
 	if (m_ParticleSys)
 	{
-		if (m_Spring && m_DrawSprings)
-		{
-			glLineWidth(2);
+		if(m_Dirty) {
+			// printf("generating display list\n");
+			if(glIsList(m_DisplayList) == GL_TRUE) {
+				glDeleteLists(m_DisplayList,1);
+			}
+			m_DisplayList = glGenLists(1);
+			glNewList(m_DisplayList,GL_COMPILE);
 			
-
-			glBegin(GL_LINES);
-
-			glColor3f(0.0f,1.0f,0.0f);
-
-			tempSpring = m_Spring;
-
-			for (int loop = 0; loop < m_SpringCnt; loop++)
+			if (m_Spring && m_DrawSprings)
 			{
-				// Only draw normal springs or the cloth "structural" ones
-				if ((tempSpring->type == MANUAL_SPRING) ||
-					(tempSpring->type == STRUCTURAL_SPRING && m_DrawStructural))
-				{
-					glVertex3fv((float *)&m_CurrentSys[tempSpring->p1].pos);
-					glVertex3fv((float *)&m_CurrentSys[tempSpring->p2].pos);
-				}
-				tempSpring++;
-			}
-			
-		
-			if (m_MouseForceActive)	// DRAW MOUSESPRING FORCE
-			{
-				if (m_Pick[0] > -1)
-				{
-					glColor3f(0.8f,0.0f,0.8f);
-					glVertex3fv((float *)&m_CurrentSys[m_Pick[0]].pos);
-					glVertex3fv((float *)&m_MouseDragPos[0]);
-				}
-				if (m_Pick[1] > -1)
-				{
-					glColor3f(0.8f,0.0f,0.8f);
-					glVertex3fv((float *)&m_CurrentSys[m_Pick[1]].pos);
-					glVertex3fv((float *)&m_MouseDragPos[1]);
-				}
-			}
-			
-			glEnd();
-		}
-		
-		if (manu)
-		{
-			glColor3f(1.0, 1.0, 1.0 );
-			glPolygonMode( GL_FRONT, GL_FILL );
-			glPolygonMode( GL_BACK, GL_FILL );
-			
-			tempParticle = m_CurrentSys;
-
-			if (manu->YL_UseQuad)
-			{
-				manu->BindNextTexture();		
-				for(int j=0; j < manu->ySamples-1; j++)
-					for(int i=0; i < manu->xSamples-1; i++)
-					{
-						int offset;
-						int xSamples = manu->xSamples;
-		
-						glBegin(GL_POLYGON);
-						offset = j*(xSamples)+i;
-						tempParticle = &m_CurrentSys[ offset ];	
-						glTexCoord2f( manu->verList[offset].u1,
-										manu->verList[offset].v1  );
-
-						glVertex3fv((float *)&tempParticle->pos);
-
-						offset = j * (xSamples)+i+1;
-						tempParticle = &m_CurrentSys[ offset ];
-						glTexCoord2f( manu->verList[offset].u1,
-								  		manu->verList[offset].v1);
-					
-
-						glVertex3fv((float *)&tempParticle->pos);	
-					
-
-						offset = (j+1) * (xSamples)+i+1;
-						tempParticle = &m_CurrentSys[ offset ];
-						glTexCoord2f( manu->verList[offset].u1,
-										manu->verList[offset].v1 );
-						
-
-						glVertex3fv((float *)&tempParticle->pos);	
-
-						offset = (j+1) * (xSamples)+i;
-						tempParticle = &m_CurrentSys[ offset ];
-						glTexCoord2f( manu->verList[offset].u1,
-										manu->verList[offset].v1);
-						
-						glVertex3fv((float *)&tempParticle->pos);
-
-						glEnd();
-				}
-			}
-			// For the case of Triangular Mesh
-			else if( manu->YL_UseTriangularTextureMap )
-			{
-				int imaW = manu->imaW, imaH = manu->imaH;
-
-				if( manu->firstRun )
-				{
-					int minusTriangles = 0, index;
-					int idx, trigtexres = manu->TRIGTEXRES + 1, numtrigperrow = manu->NUMTRIGPERROW;
-					for (int i = 0; i < manu->nTrig; i++ )
-					{
-						if( ( i % manu->numberOfTrianglesInATexture ) == 0 )
-						{
-							manu->BindNextTexture();
-							minusTriangles = manu->numberOfTrianglesInATexture * ( i / manu->numberOfTrianglesInATexture );
-						}
-						
-						index = i - minusTriangles;
-						glBegin(GL_POLYGON);
-						idx = manu->trigList[i].idx1;
-						tempParticle = &m_CurrentSys[idx];
-						manu->trigList[i].textureVertex1[0] = (float)(((index%numtrigperrow)*trigtexres)+1)/(float)TEXW;
-						manu->trigList[i].textureVertex1[1] = (float)(((index/numtrigperrow)*trigtexres)+1)/(float)TEXH;
-						glTexCoord2fv( manu->trigList[i].textureVertex1 );
-						glVertex3fv((float *)&tempParticle->pos);
-						
-						idx = manu->trigList[i].idx2;
-						tempParticle = &m_CurrentSys[idx];
-						manu->trigList[i].textureVertex2[0] = (float)((((index%numtrigperrow)+1)*trigtexres)-1)/(float)TEXW;
-						manu->trigList[i].textureVertex2[1] = (float)(((index/numtrigperrow)*trigtexres)+1)/(float)TEXH;
-						glTexCoord2fv( manu->trigList[i].textureVertex2 );
-						glVertex3fv((float *)&tempParticle->pos);
-						
-						idx = manu->trigList[i].idx3;
-						tempParticle = &m_CurrentSys[idx];
-						manu->trigList[i].textureVertex3[0] = (float)(((index%numtrigperrow)*trigtexres)+1)/(float)TEXW;
-						manu->trigList[i].textureVertex3[1] = (float)((((index/numtrigperrow)+1)*trigtexres)-1)/(float)TEXH;
-						glTexCoord2fv( manu->trigList[i].textureVertex3 );
-						glVertex3fv((float *)&tempParticle->pos);
-						glEnd();
-					}
-					printf( "%d %d\n", numtrigperrow, trigtexres );
-					manu->firstRun = false;
-				}
-				else // if manu->firstRun == false
-				{
-					int minusTriangles = 0;
-					for (int i = 0; i < manu->nTrig; i++ )
-					{
-						if( ( i % manu->numberOfTrianglesInATexture ) == 0 )
-						{
-							manu->BindNextTexture();
-							minusTriangles = manu->numberOfTrianglesInATexture * ( i / manu->numberOfTrianglesInATexture );
-						}
-						
-					int idx;
-					glBegin(GL_POLYGON);
-						idx = manu->trigList[i].idx1;
-						tempParticle = &m_CurrentSys[idx];
-						glTexCoord2fv( manu->trigList[i].textureVertex1 );
-
-						glVertex3fv((float *)&tempParticle->pos);
-						
-						idx = manu->trigList[i].idx2;
-						tempParticle = &m_CurrentSys[idx];
-						glTexCoord2fv( manu->trigList[i].textureVertex2 );
-
-						glVertex3fv((float *)&tempParticle->pos);
-						
-						idx = manu->trigList[i].idx3;
-						tempParticle = &m_CurrentSys[idx];
-						glTexCoord2fv( manu->trigList[i].textureVertex3 );
-						
-						glVertex3fv((float *)&tempParticle->pos);
-					glEnd();
-					}
-				}
-				glDisable(GL_TEXTURE_2D);
-		}
-		else{
-			// THIS
-			if(manu->texArray == true) {
-				// manu->BindArrTexture(0);
-				for (int i = 0; i < manu->nTrig; i++ ){
-					int idx, cur_x, cur_y;
-					bindBestTextureSplit(manu->trigList[i].idx1,
-							manu->trigList[i].idx2, manu->trigList[i].idx3,cur_x,cur_y);
-
-					idx = manu->trigList[i].idx1;
-					// bindTextureSplit(idx);	
-					glBegin(GL_POLYGON);
-					tempParticle = &m_CurrentSys[idx];
-					// renderTextureSplit(idx);	
-					renderBestTextureSplit(idx,cur_x,cur_y);	
-
-					glVertex3fv((float *)&tempParticle->pos);
-					idx = manu->trigList[i].idx2;
-					tempParticle = &m_CurrentSys[idx];
-					// renderTextureSplit(idx);	
-					renderBestTextureSplit(idx,cur_x,cur_y);	
-
-					glVertex3fv((float *)&tempParticle->pos);
-					idx = manu->trigList[i].idx3;
-					tempParticle = &m_CurrentSys[idx];
-					// renderTextureSplit(idx);		
-					renderBestTextureSplit(idx,cur_x,cur_y);	
-
-					glVertex3fv((float *)&tempParticle->pos);
-					glEnd();
-				}
-				glDisable(GL_TEXTURE_2D);
-
-			}
-			else {
-				manu->BindNextTexture();
-				int imaW = manu->imaW, imaH = manu->imaH;
-				for (int i = 0; i < manu->nTrig; i++ ){
-					glBegin(GL_POLYGON);
-					int idx;
-					idx = manu->trigList[i].idx1;
-					tempParticle = &m_CurrentSys[idx];
-					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-					glVertex3fv((float *)&tempParticle->pos);
-					idx = manu->trigList[i].idx2;
-					tempParticle = &m_CurrentSys[idx];
-					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-					glVertex3fv((float *)&tempParticle->pos);
-					idx = manu->trigList[i].idx3;
-					tempParticle = &m_CurrentSys[idx];
-					glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
-					glVertex3fv((float *)&tempParticle->pos);
-					glEnd();
-				}
-				glDisable(GL_TEXTURE_2D);
-			}
-		}
-	 } // end if (manu)
-
-		if (m_DrawVertices)
-		{
-			glColor3f(1.0, 0.0, 0.0);
-			glPointSize(vertexPointSize);
-			glBegin(GL_POINTS);
-			tempParticle = m_CurrentSys;
-			int idx = 0;
-			for (int loop = 0; loop < m_ParticleCnt; loop++)
-			{
-				if( loop == m_Pick[0] ){ glColor3f(0.0f,0.8f,0.0f); }
-				else if( loop == m_Pick[1] ){ glColor3f(0.8f,0.0f,0.0f); }
-				else if( m_LockParticles && lockedArray[loop] ){ glColor3f(1.0f,0.0f,0.0f); }
-				else{ glColor3f(0.0f,0.4f,1.0f); }
+				glLineWidth(2);
 				
-				glVertex3fv((float *)&tempParticle->pos);
 
-				float *vector = (float *)&tempParticle->pos;
+				glBegin(GL_LINES);
 
-				manu->verList[idx].x = vector[0];
-				manu->verList[idx].y = vector[2];
-				manu->verList[idx].z = vector[1];
-				idx++;
-				tempParticle++;
-			}
-			glEnd();
-		}
-			// try may texture if you can!
-		
+				glColor3f(0.0f,1.0f,0.0f);
+
+				tempSpring = m_Spring;
+
+				for (int loop = 0; loop < m_SpringCnt; loop++)
+				{
+					// Only draw normal springs or the cloth "structural" ones
+					if ((tempSpring->type == MANUAL_SPRING) ||
+						(tempSpring->type == STRUCTURAL_SPRING && m_DrawStructural))
+					{
+						glVertex3fv((float *)&m_CurrentSys[tempSpring->p1].pos);
+						glVertex3fv((float *)&m_CurrentSys[tempSpring->p2].pos);
+					}
+					tempSpring++;
+				}
+				
 			
+				if (m_MouseForceActive)	// DRAW MOUSESPRING FORCE
+				{
+					if (m_Pick[0] > -1)
+					{
+						glColor3f(0.8f,0.0f,0.8f);
+						glVertex3fv((float *)&m_CurrentSys[m_Pick[0]].pos);
+						glVertex3fv((float *)&m_MouseDragPos[0]);
+					}
+					if (m_Pick[1] > -1)
+					{
+						glColor3f(0.8f,0.0f,0.8f);
+						glVertex3fv((float *)&m_CurrentSys[m_Pick[1]].pos);
+						glVertex3fv((float *)&m_MouseDragPos[1]);
+					}
+				}
+				
+				glEnd();
+			}
+			
+			if (manu)
+			{
+				glColor3f(1.0, 1.0, 1.0 );
+				glPolygonMode( GL_FRONT, GL_FILL );
+				glPolygonMode( GL_BACK, GL_FILL );
+				
+				tempParticle = m_CurrentSys;
+
+				if (manu->YL_UseQuad)
+				{
+					manu->BindNextTexture();		
+					for(int j=0; j < manu->ySamples-1; j++)
+						for(int i=0; i < manu->xSamples-1; i++)
+						{
+							int offset;
+							int xSamples = manu->xSamples;
+			
+							glBegin(GL_POLYGON);
+							offset = j*(xSamples)+i;
+							tempParticle = &m_CurrentSys[ offset ];	
+							glTexCoord2f( manu->verList[offset].u1,
+											manu->verList[offset].v1  );
+
+							glVertex3fv((float *)&tempParticle->pos);
+
+							offset = j * (xSamples)+i+1;
+							tempParticle = &m_CurrentSys[ offset ];
+							glTexCoord2f( manu->verList[offset].u1,
+												manu->verList[offset].v1);
+						
+
+							glVertex3fv((float *)&tempParticle->pos);	
+						
+
+							offset = (j+1) * (xSamples)+i+1;
+							tempParticle = &m_CurrentSys[ offset ];
+							glTexCoord2f( manu->verList[offset].u1,
+											manu->verList[offset].v1 );
+							
+
+							glVertex3fv((float *)&tempParticle->pos);	
+
+							offset = (j+1) * (xSamples)+i;
+							tempParticle = &m_CurrentSys[ offset ];
+							glTexCoord2f( manu->verList[offset].u1,
+											manu->verList[offset].v1);
+							
+							glVertex3fv((float *)&tempParticle->pos);
+
+							glEnd();
+					}
+				}
+				// For the case of Triangular Mesh
+				else if( manu->YL_UseTriangularTextureMap )
+				{
+					int imaW = manu->imaW, imaH = manu->imaH;
+
+					if( manu->firstRun )
+					{
+						int minusTriangles = 0, index;
+						int idx, trigtexres = manu->TRIGTEXRES + 1, numtrigperrow = manu->NUMTRIGPERROW;
+						for (int i = 0; i < manu->nTrig; i++ )
+						{
+							if( ( i % manu->numberOfTrianglesInATexture ) == 0 )
+							{
+								manu->BindNextTexture();
+								minusTriangles = manu->numberOfTrianglesInATexture * ( i / manu->numberOfTrianglesInATexture );
+							}
+							
+							index = i - minusTriangles;
+							glBegin(GL_POLYGON);
+							idx = manu->trigList[i].idx1;
+							tempParticle = &m_CurrentSys[idx];
+							manu->trigList[i].textureVertex1[0] = (float)(((index%numtrigperrow)*trigtexres)+1)/(float)TEXW;
+							manu->trigList[i].textureVertex1[1] = (float)(((index/numtrigperrow)*trigtexres)+1)/(float)TEXH;
+							glTexCoord2fv( manu->trigList[i].textureVertex1 );
+							glVertex3fv((float *)&tempParticle->pos);
+							
+							idx = manu->trigList[i].idx2;
+							tempParticle = &m_CurrentSys[idx];
+							manu->trigList[i].textureVertex2[0] = (float)((((index%numtrigperrow)+1)*trigtexres)-1)/(float)TEXW;
+							manu->trigList[i].textureVertex2[1] = (float)(((index/numtrigperrow)*trigtexres)+1)/(float)TEXH;
+							glTexCoord2fv( manu->trigList[i].textureVertex2 );
+							glVertex3fv((float *)&tempParticle->pos);
+							
+							idx = manu->trigList[i].idx3;
+							tempParticle = &m_CurrentSys[idx];
+							manu->trigList[i].textureVertex3[0] = (float)(((index%numtrigperrow)*trigtexres)+1)/(float)TEXW;
+							manu->trigList[i].textureVertex3[1] = (float)((((index/numtrigperrow)+1)*trigtexres)-1)/(float)TEXH;
+							glTexCoord2fv( manu->trigList[i].textureVertex3 );
+							glVertex3fv((float *)&tempParticle->pos);
+							glEnd();
+						}
+						printf( "%d %d\n", numtrigperrow, trigtexres );
+						manu->firstRun = false;
+					}
+					else // if manu->firstRun == false
+					{
+						int minusTriangles = 0;
+						for (int i = 0; i < manu->nTrig; i++ )
+						{
+							if( ( i % manu->numberOfTrianglesInATexture ) == 0 )
+							{
+								manu->BindNextTexture();
+								minusTriangles = manu->numberOfTrianglesInATexture * ( i / manu->numberOfTrianglesInATexture );
+							}
+							
+						int idx;
+						glBegin(GL_POLYGON);
+							idx = manu->trigList[i].idx1;
+							tempParticle = &m_CurrentSys[idx];
+							glTexCoord2fv( manu->trigList[i].textureVertex1 );
+
+							glVertex3fv((float *)&tempParticle->pos);
+							
+							idx = manu->trigList[i].idx2;
+							tempParticle = &m_CurrentSys[idx];
+							glTexCoord2fv( manu->trigList[i].textureVertex2 );
+
+							glVertex3fv((float *)&tempParticle->pos);
+							
+							idx = manu->trigList[i].idx3;
+							tempParticle = &m_CurrentSys[idx];
+							glTexCoord2fv( manu->trigList[i].textureVertex3 );
+							
+							glVertex3fv((float *)&tempParticle->pos);
+						glEnd();
+						}
+					}
+					glDisable(GL_TEXTURE_2D);
+			}
+			else{
+				// THIS
+				if(manu->texArray == true) {
+					// manu->BindArrTexture(0);
+					for (int i = 0; i < manu->nTrig; i++ ){
+						int idx, cur_x, cur_y;
+						bindBestTextureSplit(manu->trigList[i].idx1,
+								manu->trigList[i].idx2, manu->trigList[i].idx3,cur_x,cur_y);
+
+						idx = manu->trigList[i].idx1;
+						// bindTextureSplit(idx);	
+						glBegin(GL_POLYGON);
+						tempParticle = &m_CurrentSys[idx];
+						// renderTextureSplit(idx);	
+						renderBestTextureSplit(idx,cur_x,cur_y);	
+
+						glVertex3fv((float *)&tempParticle->pos);
+						idx = manu->trigList[i].idx2;
+						tempParticle = &m_CurrentSys[idx];
+						// renderTextureSplit(idx);	
+						renderBestTextureSplit(idx,cur_x,cur_y);	
+
+						glVertex3fv((float *)&tempParticle->pos);
+						idx = manu->trigList[i].idx3;
+						tempParticle = &m_CurrentSys[idx];
+						// renderTextureSplit(idx);		
+						renderBestTextureSplit(idx,cur_x,cur_y);	
+
+						glVertex3fv((float *)&tempParticle->pos);
+						glEnd();
+					}
+					glDisable(GL_TEXTURE_2D);
+
+				}
+				else {
+					manu->BindNextTexture();
+					int imaW = manu->imaW, imaH = manu->imaH;
+					for (int i = 0; i < manu->nTrig; i++ ){
+						glBegin(GL_POLYGON);
+						int idx;
+						idx = manu->trigList[i].idx1;
+						tempParticle = &m_CurrentSys[idx];
+						glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+						glVertex3fv((float *)&tempParticle->pos);
+						idx = manu->trigList[i].idx2;
+						tempParticle = &m_CurrentSys[idx];
+						glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+						glVertex3fv((float *)&tempParticle->pos);
+						idx = manu->trigList[i].idx3;
+						tempParticle = &m_CurrentSys[idx];
+						glTexCoord2f( manu->verList[idx].u1*imaW/TEXW, manu->verList[idx].v1*imaH/TEXH);
+						glVertex3fv((float *)&tempParticle->pos);
+						glEnd();
+					}
+					glDisable(GL_TEXTURE_2D);
+				}
+			}
+		 } // end if (manu)
+
+			if (m_DrawVertices)
+			{
+				glColor3f(1.0, 0.0, 0.0);
+				glPointSize(vertexPointSize);
+				glBegin(GL_POINTS);
+				tempParticle = m_CurrentSys;
+				int idx = 0;
+				for (int loop = 0; loop < m_ParticleCnt; loop++)
+				{
+					if( loop == m_Pick[0] ){ glColor3f(0.0f,0.8f,0.0f); }
+					else if( loop == m_Pick[1] ){ glColor3f(0.8f,0.0f,0.0f); }
+					else if( m_LockParticles && lockedArray[loop] ){ glColor3f(1.0f,0.0f,0.0f); }
+					else{ glColor3f(0.0f,0.4f,1.0f); }
+					
+					glVertex3fv((float *)&tempParticle->pos);
+
+					float *vector = (float *)&tempParticle->pos;
+
+					manu->verList[idx].x = vector[0];
+					manu->verList[idx].y = vector[2];
+					manu->verList[idx].z = vector[1];
+					idx++;
+					tempParticle++;
+				}
+				glEnd();
+			}
+				// try may texture if you can!
+			
+			glEndList();
+			m_Dirty = false;
+		} // end if dirty
+		glCallList(m_DisplayList);
 	}
 	glFlush();
 
@@ -1830,6 +1847,7 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 						break;
 				}
 			}	
+			m_Dirty = true;
 		}
 		
 		collisionState = CheckForCollisions( m_TargetSys );
@@ -1851,6 +1869,7 @@ void CPhysEnv::Simulate( float DeltaTime, bool running )
 				m_CollisionPlane[1].d = m_WorldSizeY / 2.0f;
 				break;
 			}
+			m_Dirty = true;
 		}
 		
 		if( collisionState == PENETRATING )

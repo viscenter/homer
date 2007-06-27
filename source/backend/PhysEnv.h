@@ -104,6 +104,7 @@ void setWorldSize( float x, float y, float z );
 		bool m_UseGravity;			// SHOULD GRAVITY BE ADDED IN
 		bool m_UseDamping;			// SHOULD DAMPING BE ON
 		bool m_UserForceActive;		// WHEN USER FORCE IS APPLIED
+		bool m_Dirty; // physical model needs to be redrawn
 		bool m_DrawSprings;			// DRAW THE SPRING LINES
 		bool m_DrawVertices;			// DRAW VERTICES
 		bool m_MouseForceActive;		// MOUSE DRAG FORCE
@@ -125,6 +126,7 @@ void setWorldSize( float x, float y, float z );
 	
 	// Attributes
 	private:
+		GLuint           m_DisplayList;
 		float            m_WorldSizeX,m_WorldSizeY,m_WorldSizeZ;
 		tVector          m_Gravity;				// GRAVITY FORCE VECTOR
 		tVector          m_UserForce;				// USER FORCE VECTOR
