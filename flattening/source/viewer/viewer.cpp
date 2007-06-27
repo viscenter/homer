@@ -11,15 +11,11 @@
 #include <cstdlib>
 #include "smtss.h"
 
-// #include <boost/program_options.hpp>
-
 #include <glui.h>
 
 #include <errno.h>
 #include <dirent.h>
 #include <vector>
-
-// namespace po = boost::program_options;
 
 #include <iostream>
 #include <string>
@@ -47,21 +43,11 @@ enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_I
 vector<string> fileNames;
 
 int main_window;
-
-bool countdisplay = true, screenshot = false, springs = false, vertices = false;
-
-bool auto_start = true, auto_quit = true;
-
-string output_filename, integrator;
-int output_width, output_height;
+bool screenshot = false;
 
 extern GLint width, height;
-
-int mouse_state;
-int mouseX = 0, mouseY = 0;
-
 float TotalTime = 0.0f;
-float time_limit;
+float time_limit = 0;
 
 void ToggleVerticesAndSprings( void )
 {
@@ -137,76 +123,6 @@ void update_once(void)
 	glutPostRedisplay();
 }
 
-void rotate( int deltaX, int deltaY )
-{
-	static int xAxis = 0, yAxis = 0;
-
-	if(deltaX != 0) {
-		xAxis += deltaX;
-		performAction( PERFORM_ACTION_ROTATE_ANGLE_X, xAxis );
-	}
-	if(deltaY != 0) {
-		yAxis += deltaY;
-		performAction( PERFORM_ACTION_ROTATE_ANGLE_Y, yAxis );
-	}
-}
-
-void zoom( int deltaY )
-{
-	static int zoomfactor = 0;
-
-	if(deltaY != 0) {
-		zoomfactor += deltaY;
-		performAction( PERFORM_ACTION_ADJUST_DISTANCE, zoomfactor );
-	}
-}
-
-void MouseHandler( int button, int state, int x, int y )
-{
-	if(state == GLUT_DOWN) {
-		mouse_state = button;
-	}
-	else {
-		mouse_state = 0;
-	}
-
-	mouseX = x;
-	mouseY = y;
-}
-
-void MotionHandler( int x, int y )
-{
-	switch(mouse_state) {
-		case GLUT_LEFT_BUTTON:
-			rotate(mouseX - x, mouseY - y);
-			break;
-		case GLUT_RIGHT_BUTTON:
-			zoom(mouseY - y);
-			break;
-		case GLUT_MIDDLE_BUTTON:
-			rotate(mouseX - x, 0);
-			break;
-		default:
-			break;
-	}
-
-	mouseX = x;
-	mouseY = y;
-
-	glutPostRedisplay();
-}
-
-void Toggle_Mouse(bool enable) {
-	if(enable) {
-		glutMouseFunc( MouseHandler );
-		glutMotionFunc( MotionHandler );
-	}
-	else {
-		glutMouseFunc( NULL );
-		glutMotionFunc( NULL );
-	}
-}
-
 void Display()
 {
 	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
@@ -264,46 +180,6 @@ void getFileNames()
 		exit(1);
 	}
 	closedir(pdir);
-}
-
-void print_camera(void)
-{
-	for(int i = 0; i < 16; i++) {
-		printf("%f\t",view_rotate[i]);
-	}
-	printf("\n");
-	for(int i = 0; i < 3; i++) {
-		printf("%f\t",obj_pos[i]);
-	}
-	printf("\n");
-}
-
-void Keyboard( unsigned char value, int x, int y )
-{
-	switch( value )
-	{
-		case 'q': 
-			printf("Quitting...\n");
-			exit(0);
-		case 'p':
-			printf("Running simulation\n");
-			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
-			break;
-		case 'o':
-		case 'e':
-			printf("Pausing simulation\n");
-			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE ); 
-			Toggle_Mouse(true);
-			break;
-		case ',':
-			printf("Toggling vertex display\n");
-			vertices = !vertices;
-			break;
-		case 'z':
-			print_camera();
-			break;
-	}
-	glutPostRedisplay();
 }
 
 void InitFromFileNames(int pos) {
@@ -453,56 +329,14 @@ int main( int argc, char** argv )
 	
 	glutInit( &argc, argv );
 
-/*	
-	po::options_description generic("Program options");
-	generic.add_options()
-		("help", "produce help message")
-		;
-
-	po::options_description hidden("Hidden options");
-	hidden.add_options()
-		("mesh-file,M",
-		 	po::value<string>(&mesh_file)->default_value("data/ski.surf"),
-			"input mesh file")
-		("image-file,I",
-		 	po::value<string>(&image_file)->default_value("data/ski-1.ppm"),
-			"input image file")
-		;
-	
-	po::options_description cmdline_options;
-	cmdline_options.add(generic).add(hidden);
-	
-	po::positional_options_description pd;
-	pd.add("mesh-file",1);
-	pd.add("image-file",1);
-	
-	po::variables_map vm;
-	po::store(po::command_line_parser(argc, argv).
-			options(cmdline_options).positional(pd).run(), vm);
-	po::notify(vm);
-	
-	if(vm.count("help")) {
-		cout << "Usage:\n";
-		cout << "\t" << argv[0] << " [mesh file] [image file] [script file]\n";
-		cout << generic << "\n";
-		return 1;
-	}
-*/
-
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
 
 	setup_glui();
 	
 	InitFromFileNames(0);
-	// init((char *)mesh_file.c_str(),	(char *)image_file.c_str());
 
 	glutDisplayFunc( Display );
-	//  glutReshapeFunc( MyReshapeCanvas );
-	glutKeyboardFunc( Keyboard );
-	if(!auto_start) {
-		Toggle_Mouse(true);
-	}
 
 	update_once();
 
