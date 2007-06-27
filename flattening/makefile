@@ -22,7 +22,7 @@ VIEWEROUT	:= viewer
 UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
-LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm -ljpeg
+LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm 
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
 CFLAGS	:=	-O3 -DDEBUG
@@ -36,18 +36,27 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	LIBS	+= `pkg-config --libs opencv`
 endif
 # MinGW-specific flags
+# Get GLUT from http://mywebpage.netscape.com/PtrPck/glut.htm
+# Use it to build GLUI
 ifneq (,$(findstring MINGW,$(UNAME)))
-	LIBS	:=	-lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
+	SMTOUT	:= smt.exe
+	VIEWEROUT	:= viewer.exe
+	LIBS  :=	 -L/c/Program\ Files/OpenCV/lib
+	LIBS	+=	-lhighgui -lcv -lcxcore -lglui -lglut32 -lopengl32 -lglu32 -lstdc++
 	CFLAGS	:=	-D_STDCALL_SUPPORTED -D_M_IX86	
+	CFLAGS  +=	-I/c/Program\ Files/OpenCV/cv/include -I/c/Program\ Files/OpenCV/cxcore/include \
+							-I/c/Program\ Files/OpenCV/otherlibs/highgui
 	JAVAGL	:=	smt.exe
 endif
 # Cygwin-specific flags
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
-	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lglui -lopengl32 -lglu32 -lglut32 -ljpeg -lstdc++
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lglui -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	:=	-I/usr/include/opencv -I/usr/include/boost-1_33_1	
+	CFLAGS	:=	-I/usr/include/opencv -I/usr/include/boost-1_33_1
+	# CFLAGS += -mno-cygwin
+	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
@@ -58,7 +67,7 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 	# export CXX		:=	/usr/local/bin/g++
 	# CFLAGS	+=  -ftree-vectorize -fopenmp
 	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include
-	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -ljpeg -framework OpenGL -framework GLUT -framework Foundation
+	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -framework OpenGL -framework GLUT -framework Foundation
 endif
 
 # gprof flags
@@ -71,7 +80,7 @@ BACKENDSOURCES	:=	source/backend
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
-INCLUDES		:=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES)
+INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES)
 
 CFLAGS		+= $(INCLUDE)
 CXXFLAGS	:= $(CFLAGS)
@@ -107,6 +116,12 @@ export VIEWEROFILES		:=	$(VIEWERCPPFILES:.cpp=.o)
 export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
 export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
+ifneq (,$(findstring MINGW,$(UNAME)))
+	export BUILDBINS :=	$(VIEWERBIN)
+else
+	export BUILDBINS := $(SMTBIN) $(VIEWERBIN)
+endif
+
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
@@ -130,9 +145,10 @@ else # in build directory
 
 DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
 			$(SMTOFILES:.o=.d) \
-			$(SMTJAVAOFILES:.o=.d)
+#			$(SMTJAVAOFILES:.o=.d)
 
-all: $(SMTBIN) $(VIEWERBIN)
+all: $(BUILDBINS)
+#all: $(SMTBIN) $(VIEWERBIN)
 #smtjava
 
 $(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
@@ -142,11 +158,11 @@ $(VIEWERBIN): $(BACKENDOFILES) $(VIEWEROFILES)
 	$(LD) $(LDFLAGS) $(VIEWEROFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
 
 
-.PHONY: smtjava
-smtjava: $(JAVAGLBIN) smt.class
+# .PHONY: smtjava
+# smtjava: $(JAVAGLBIN) smt.class
 
-$(JAVAGLBIN): $(BACKENDOFILES) $(SMTJAVAOFILES)
-	$(LD) $(JAVAINCLUDE) $(JNILDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
+# $(JAVAGLBIN): $(BACKENDOFILES) $(SMTJAVAOFILES)
+# 	$(LD) $(JAVAINCLUDE) $(JNILDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
 
 -include $(DEPENDS)
 
