@@ -48,17 +48,19 @@ manuModel::manuModel()
 
 manuModel::~manuModel()
 {
-	if( verList != NULL ) delete verList;
+	if( verList != NULL ) delete[] verList;
+	if( trigList != NULL ) delete[] trigList;
+	if( originalList != NULL ) delete[] originalList;
 	
 	texture *next = firstTexture->nextTexture;
-	delete firstTexture->ima;
+	delete[] firstTexture->ima;
 	// delete firstTexture->subIma;
 	delete firstTexture;
 	while( next != NULL )
 	{
 		currentTexture = next;
 		next = currentTexture->nextTexture;
-		delete currentTexture->ima;
+		delete[] currentTexture->ima;
 		// delete currentTexture->subIma;
 		delete currentTexture;
 	}

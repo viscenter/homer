@@ -848,12 +848,25 @@ void CPhysEnv::SetWorldParticles(tTexturedVertex *coords,int particleCnt)
 ///////////////////////////////////////////////////////////////////////////////
 void CPhysEnv::FreeSystem()
 {
+	free(lockedArray);
+
+	if((m_CurrentSys != NULL) && (m_CurrentSys != m_ParticleSys[0])
+			&& (m_CurrentSys != m_ParticleSys[1])
+			&& (m_CurrentSys != m_ParticleSys[2])) {
+		free(m_CurrentSys);
+	}
+	if((m_TargetSys != NULL) && (m_TargetSys != m_ParticleSys[0])
+			&& (m_TargetSys != m_ParticleSys[1])
+			&& (m_TargetSys != m_ParticleSys[2])) {
+		free(m_TargetSys);
+	}
+
 	m_Pick[0] = -1;
 	m_Pick[1] = -1;
 	if (m_ParticleSys[0])
 	{
-		m_ParticleSys[0] = NULL;
 		free(m_ParticleSys[0]);
+		m_ParticleSys[0] = NULL;
 	}
 	if (m_ParticleSys[1])
 	{
