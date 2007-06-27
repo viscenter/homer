@@ -1786,7 +1786,7 @@ void CPhysEnv::CheckDistance( float DeltaTime )
 		if( (magy < comp) && (magx < comp) && (magz < comp) ) {
 			if( (dist < 0.1f) && (dist > 0.0f) ) {
 				performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
-				printf("Done.\n\n");
+				// printf("Done.\n\n");
 				screenshot = true;
 			}
 		}
