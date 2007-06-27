@@ -38,7 +38,7 @@ GLUI *glui;
 GLUI_Listbox *fileBox;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
 
 vector<string> fileNames;
 
@@ -245,6 +245,11 @@ void control_cb(int control)
 			NewSystem();
 			DisableGLUIandInit();
 			break;
+		case QUIT_ID:
+			glui->close();
+			performAction( PERFORM_ACTION_QUIT, PERFORM_ACTION_TRUE );
+			exit(0);	
+			break;
 		default:
 			break;
 	}
@@ -331,7 +336,7 @@ void setup_glui(void)
   
 
    /****** A 'quit' button *****/
-  glui->add_button( "Quit", 0,(GLUI_Update_CB)exit );
+  glui->add_button( "Quit", QUIT_ID, control_cb );
 
 
   /**** Link windows to GLUI, and register idle callback ******/
