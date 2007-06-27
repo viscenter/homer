@@ -161,6 +161,9 @@ void getFileNames()
 	DIR *pdir;
 	struct dirent *pent;
 
+	GLint texsize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texsize);
+
 	pdir = opendir("venetus");
 	if(!pdir)	{
 		fprintf(stderr,"Failed to open directory. Terminating.\n");
@@ -170,8 +173,13 @@ void getFileNames()
 	while(pent=readdir(pdir)) {
 		string file = pent->d_name;
 		if(file[0] != '.') {
-			if(file.find(".surf",0) != string::npos) {
-				fileNames.push_back(file);
+			if(file.compare(file.length()-5,5,".surf") == 0) {
+				if(file.compare(file.length()-8,3,"-lo") == 0) {
+					fileNames.push_back(file);
+				}
+				else if((file.compare(file.length()-8,3,"-hi") == 0) && (texsize > 2048)) {
+					fileNames.push_back(file);
+				}
 			}
 		}
 	}
@@ -293,11 +301,13 @@ void setup_glui(void)
   glui->add_checkbox_to_panel( actions_panel, "Show Vertices", &show_vertices, VERTICES_ID, control_cb ); 
   glui->add_checkbox_to_panel( actions_panel, "Show Springs", &show_springs, SPRINGS_ID, control_cb ); 
 
+	/*
   GLUI_Spinner *flatteningSpinner = 
     glui->add_spinner_to_panel( actions_panel, "Flattening", GLUI_SPINNER_FLOAT,
 				&flattening, FLATTENING_ID,	control_cb );
   flatteningSpinner->set_float_limits( 0.0, 100.0 );
   flatteningSpinner->set_speed( .05 );
+	*/
 
   glui->add_button_to_panel( actions_panel, "Flatten" , FLATTENING_ID, control_cb);
 
