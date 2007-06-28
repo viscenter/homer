@@ -25,7 +25,7 @@ UNAME	:=	$(shell uname -s)
 LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm 
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
-CFLAGS	:=	-O3 -DDEBUG
+CFLAGS	:=	-O3 
 
 # Linux-specific flags
 ifneq (,$(findstring Linux,$(UNAME)))	
@@ -43,7 +43,7 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	VIEWEROUT	:= viewer.exe
 	LIBS  :=	 -L/c/Program\ Files/OpenCV/lib
 	LIBS	+=	-lhighgui -lcv -lcxcore -lglui -lglut32 -lopengl32 -lglu32 -lstdc++
-	CFLAGS	:=	-D_STDCALL_SUPPORTED -D_M_IX86	
+	CFLAGS	+=	-D_STDCALL_SUPPORTED -D_M_IX86	
 	CFLAGS  +=	-I/c/Program\ Files/OpenCV/cv/include -I/c/Program\ Files/OpenCV/cxcore/include \
 							-I/c/Program\ Files/OpenCV/otherlibs/highgui
 	JAVAGL	:=	smt.exe
