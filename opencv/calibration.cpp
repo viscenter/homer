@@ -21,6 +21,7 @@ bool calibrate( const char * dir, CvMat **K, CvMat **d,
 		CvSize dim = cvSize(7,7), float size = 25 );
 int readCheckers( const char * file, const char * image, CvSize dim,
     CvMat ** checkers, CvMat ** image_checkers );
+bool loadExtrinsics( const char * filename, CvMat ** r, CvMat ** t );
 bool extrinsics( const char * file, const char * image, CvSize dim,
     const CvMat *K, const CvMat *d, CvMat ** r, CvMat ** t );
 bool mapTexture( const char * file, CvMat *K, CvMat *d, CvMat *r, CvMat *t );
@@ -470,11 +471,44 @@ int readCheckers( const char * file, const char * image, CvSize dim,
   return check.size();
 }
 
+bool loadExtrinsics( const char * filename, CvMat ** r, CvMat ** t )
+{
+	FILE * extrinsics = fopen(
+			filename, "r" );
+
+	if( extrinsics ) {
+		fclose(extrinsics);
+		*r = (CvMat*)cvLoad( filename, NULL, "R", NULL);
+		*t = (CvMat*)cvLoad( filename, NULL, "T", NULL);
+		return true;
+	}
+
+	return false;
+}	
+
 bool extrinsics( const char * file, const char * image, CvSize dim,
     const CvMat *K, const CvMat *d, CvMat ** r, CvMat ** t )
 {
 	CvMat * checkers = NULL;
 	CvMat * image_checkers = NULL;
+
+	char * image_nodir = strrchr(image,'/');
+	if(image_nodir == NULL) {
+		image_nodir = (char *)image;
+	}
+	else {
+		image_nodir += 1; // get rid of beginning slash
+	}
+
+	std::string extrinsicsname = (std::string(file).substr(0,strlen(file)-4)+"-"+
+			std::string(image_nodir).substr(0,strlen(image_nodir)-3)+"extrinsics");
+
+	printf("Extrinsics file: %s\n", extrinsicsname.c_str());
+
+	if( loadExtrinsics( extrinsicsname.c_str(), r, t ) ) {
+		printf("Loaded extrinsics from file\n");
+		return true;
+	}
 
 	int size = readCheckers( file, image, dim, &checkers, &image_checkers );
 	printf("Read %d checkers\n",size);
@@ -504,6 +538,11 @@ bool extrinsics( const char * file, const char * image, CvSize dim,
 
 		cvReleaseMat( &checkers );
 		cvReleaseMat( &image_checkers );
+
+		CvFileStorage * fs = cvOpenFileStorage( extrinsicsname.c_str(), 0, CV_STORAGE_WRITE );
+		cvWrite( fs, "R", *r );
+		cvWrite( fs, "T", *t );
+		cvReleaseFileStorage( &fs );
 
 		return true;
 	}
