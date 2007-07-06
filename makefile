@@ -66,8 +66,8 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 	# export CC		:=	/usr/local/bin/gcc
 	# export CXX		:=	/usr/local/bin/g++
 	# CFLAGS	+=  -ftree-vectorize -fopenmp
-	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include
-	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -framework OpenGL -framework GLUT -framework Foundation
+	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include -I/opt/local/include/boost-1_34
+	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -lglui -framework OpenGL -framework GLUT -framework Foundation
 endif
 
 # gprof flags
@@ -136,9 +136,7 @@ smt:
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile $(SMTBIN)
 
 clean:
-	rm -f $(SMTOUT)
-	rm -f $(VIEWEROUT)
-	rm -f $(JAVAGL)
+	rm -f $(BUILDBINS)
 	rm -rf $(BUILD)
 
 else # in build directory
