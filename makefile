@@ -54,7 +54,7 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 	VIEWEROUT	:= viewer.exe
 	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lglui -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	:=	-I/usr/include/opencv -I/usr/include/boost-1_33_1
+	CFLAGS	+=	-I/usr/include/opencv -I/usr/include/boost-1_33_1
 	# CFLAGS += -mno-cygwin
 	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
