@@ -611,6 +611,7 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		}
 		original_bound.width -= original_bound.x;
 		original_bound.height -= original_bound.y;
+		CvRect unmodified_bound = original_bound;
 		printf( "Bound: %d, %d, %d, %d\n", original_bound.x, original_bound.y, original_bound.width, original_bound.height );
 		// cvReleaseMat( &texture_i );
 		/*
@@ -637,6 +638,7 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		original_bound.height -= (bind_offset*3);
 		cvSetImageROI( dirty, original_bound );
 		cvSaveImage("threshedbound.jpg", dirty);
+		cvSaveImage("threshedclean.jpg", clean);
 		CvMemStorage * storage = cvCreateMemStorage(0);
 		CvSeq * contours;
 		int numcontours = cvFindContours( dirty, storage, &contours, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_NONE, cvPoint( original_bound.x, original_bound.y ) );
@@ -657,7 +659,7 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 				CvSeq * approxp = cvApproxPoly( contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP, cvContourPerimeter( contours ) * 0.02, 0 );
 				CvPoint * firstp = (CvPoint*)cvGetSeqElem( approxp, 0 );
 				cvResetImageROI( dirty_orig );
-				if( ((int)cvGetReal2D( dirty_orig, firstp->x, firstp->y )) == 0 ) {
+				if( /*((int)cvGetReal2D( dirty_orig, firstp->y, firstp->x )) == 0*/ true ) {
 					printf("Area: %f\n",curarea);
 					// CvSeq * result = 
 					CvRect bounding_rect = cvBoundingRect(contours,0);
@@ -721,35 +723,11 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		cvReleaseMat( &dirty_points_i );
 		cvReleaseMat( &clean_points_i );
 
-		/*
-		dirty_points->data.fl[3*0+0] = 448;
-		dirty_points->data.fl[3*0+1] = 4840;
-		dirty_points->data.fl[3*0+2] = 0;
-		dirty_points->data.fl[3*1+0] = 377;
-		dirty_points->data.fl[3*1+1] = 434;
-		dirty_points->data.fl[3*1+2] = 0;
-		dirty_points->data.fl[3*2+0] = 6575;
-		dirty_points->data.fl[3*2+1] = 537;
-		dirty_points->data.fl[3*2+2] = 0;
-		dirty_points->data.fl[3*3+0] = 6393;
-		dirty_points->data.fl[3*3+1] = 4829;
-		dirty_points->data.fl[3*3+2] = 0;
-		clean_points->data.fl[2*0+0] = 526;
-		clean_points->data.fl[2*0+1] = 4848;
-		clean_points->data.fl[2*1+0] = 450;
-		clean_points->data.fl[2*1+1] = 436;
-		clean_points->data.fl[2*2+0] = 6643;
-		clean_points->data.fl[2*2+1] = 546;
-		clean_points->data.fl[2*3+0] = 6457;
-		clean_points->data.fl[2*3+1] = 4835;
-		*/
-
 		cvFindExtrinsicCameraParams2( dirty_points, clean_points, blank_intrinsics, NULL, second_r, second_t );
+		// cvFindExtrinsicCameraParams2( dirty_points, clean_points, K, d, second_r, second_t );
 	
 		printf("R %0.6f %0.6f %0.6f\n", second_r->data.fl[0], second_r->data.fl[1], second_r->data.fl[2] );
 		printf("T %0.6f %0.6f %0.6f\n", second_t->data.fl[0], second_t->data.fl[1], second_t->data.fl[2] );
-	
-		// cvFindExtrinsicCameraParams2( dirty_points, clean_points, K, d, second_r, second_t );
 
 		cvReleaseMat( &dirty_points );
 		cvReleaseMat( &clean_points );
@@ -765,19 +743,17 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		// cvProjectPoints2( texture_3d, second_r, second_t, K, d, clean_texture );
 
 		cvReleaseMat( &texture_3d );
+		
+		cvResetImageROI( dirty_orig );
+		cvSaveImage( "dirty.jpg", dirty_orig );
 
-		/*
 		cvReleaseImage( &dirty_orig );
 		cvReleaseImage( &clean );
 
-		dirty_orig = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
+		IplImage * clean_remapped = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
 		clean = cvLoadImage( clean_file, CV_LOAD_IMAGE_COLOR );
-		*/
 		
-		cvResetImageROI( dirty_orig );
 		cvResetImageROI( clean );
-
-		cvSaveImage( "dirty.jpg", dirty_orig );
 
 		CvMat * all_points; 
 		CvMat * all_points_proj;
@@ -789,7 +765,7 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 
 		printf("Projecting all points...\n");
 	
-		int maxsize = 8192;
+		int maxsize = 8192*4;
 	
 		bool project_points = true;
 		int passes = 0;	
@@ -809,10 +785,10 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 					all_points->data.fl[3*i+2] = 0;
 					
 					thisx++;
-					if(thisx >= dirty_orig->width) {
+					if(thisx >= clean_remapped->width) {
 						thisx = 0;
 						thisy++;
-						if(thisy >= dirty_orig->height) {
+						if(thisy >= clean_remapped->height) {
 							project_points = false;
 						}
 					}
@@ -829,148 +805,86 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 				int thatx = (int)all_points_proj->data.fl[2*i+0];
 				int thaty = (int)all_points_proj->data.fl[2*i+1];
 				if( (thatx > 0) && (thatx < clean->width) && (thaty > 0) && (thaty < clean->height)) {
-					cvSet2D( dirty_orig, ty, tx, cvGet2D( clean, thaty, thatx ));
+					cvSet2D( clean_remapped, ty, tx, cvGet2D( clean, thaty, thatx ));
 				}
 			}
 			cvReleaseMat( &all_points );
 			cvReleaseMat( &all_points_proj );
 		}
 		
-		cvSaveImage( "remapped.jpg", dirty_orig );
+		cvSaveImage( "remapped.jpg", clean_remapped );
 
-		/*	
 		cvReleaseImage( &clean );
 
-		clean = cvLoadImage( thumb_file, CV_LOAD_IMAGE_GRAYSCALE );
-		cvThreshold( clean, clean, 110, 255, CV_THRESH_BINARY);
-		*/
-
-		/*
-		printf("Template matching points...\n");
-		offset = 20;
-		int offset2 = 40;
+		storage = cvCreateMemStorage();
+		CvPoint * texture_conv_stor = (CvPoint*)malloc(verts*sizeof(CvPoint));
+		CvPoint * hullmat_stor = (CvPoint*)malloc(verts*sizeof(CvPoint));
+		CvMat texture_conv = cvMat( 1, verts, CV_32SC2, texture_conv_stor );
 		for(int i = 0; i < verts; i++) {
-			// adjust points in clean_texture using template matching
-			int targx = (int)texture->data.fl[2*i+0];
-			int targy = (int)texture->data.fl[2*i+1];
-		
-			int origx = (int)clean_texture->data.fl[2*i+0];
-			int origy = (int)clean_texture->data.fl[2*i+1];
-			
-			CvRect templ_box = cvRect(origx-offset,origy-offset,offset*2,offset*2);
-
-			CvRect cursize = cvRect(targx - offset2, targy - offset2, offset2 * 2, offset2 * 2);
-			IplImage * result = cvCreateImage( cvSize( cursize.width - templ_box.width + 1, cursize.height - templ_box.height + 1), IPL_DEPTH_32F, 1 );	
-
-			cvSetImageROI( clean, templ_box );
-			cvSetImageROI( dirty_orig, cursize );
-
-			cvMatchTemplate( dirty_orig, clean, result, CV_TM_SQDIFF_NORMED );
-
-			cvNamedWindow("Dirty",0);
-			cvNamedWindow("Clean",0);
-			cvNamedWindow("Result",0);
-			cvShowImage("Dirty",dirty_orig);
-			cvShowImage("Clean",clean);
-			cvShowImage("Result",result);
-
-			cvMinMaxLoc( result, &curmin, &curmax, &minpoint, &maxpoint );
-
-			// printf("%d,%d\n", minpoint.x, minpoint.y);
-
-			// cvWaitKey(0);
-			// cvDestroyAllWindows();
-		
-			if(!((minpoint.x == 0) && (minpoint.y == 0)))  {
-				clean_texture->data.fl[2*i+0] -= templ_box.x - (cursize.x + minpoint.x);
-				clean_texture->data.fl[2*i+1] -= templ_box.y - (cursize.y + minpoint.y);
-			}
-			// clean_texture->data.fl[2*i+0] -= (templ_box.x + (templ_box.width / 2)) - (cursize.x + minpoint.x + (templ_box.width / 2));
-			// clean_texture->data.fl[2*i+1] -= (templ_box.y + (templ_box.height / 2)) - (cursize.y + minpoint.y + (templ_box.height / 2));
-			
-			// printf("%d,%d\t->\t%d,%d\n",(int)dirty_points_i->data.fl[3*curcontour+0],(int)dirty_points_i->data.fl[3*curcontour+1],
-			//	(int)clean_points_i->data.fl[2*curcontour+0],(int)clean_points_i->data.fl[2*curcontour+1]);
-
-			cvReleaseImage( &result );
+			 texture_conv_stor[i] = cvPoint((int)texture->data.fl[2*i+0],(int)texture->data.fl[2*i+1]);
 		}
-		*/
-
-		cvReleaseImage( &clean );
-		cvReleaseImage( &dirty_orig );
-
-		// cvReleaseMat( &all_points_proj );
-
 		/*
-		for( int y = 0; y < original_bound.height; y++ ) {
-			CvMat * tex_cur_line = cvCreateMat( original_bound.width, 3, CV_32FC1 );
-			CvMat * clean_cur_line = cvCreateMat( original_bound.width, 2, CV_32FC1 );
-			for( int x = 0; x < original_bound.width; x++ ) {
-				tex_cur_line->data.fl[3*x+0] = x + original_bound.x;
-				tex_cur_line->data.fl[3*x+1] = y + original_bound.y;
-				tex_cur_line->data.fl[3*x+2] = 0;
-			}
-			// tex_cur_line now contains all points for this scanline, project them into the clean image
-			cvProjectPoints2( tex_cur_line, second_r, second_t, blank_intrinsics, NULL, clean_cur_line );
- 
-			// now scan across both images and keep track of run lengths
-			// keep lengths in a queue and immediately compute result scan
+		CvSeq * ptseq = cvCreateSeq( CV_SEQ_KIND_GENERIC|CV_32SC2, sizeof(CvContour), sizeof(CvPoint), storage );
+		for(int i = 0; i < verts; i++) {
+			CvPoint temppoint;
+			temppoint.x = (int)texture->data.fl[2*i+0];
+			temppoint.y = (int)texture->data.fl[2*i+1];
+
+			cvSeqPush( ptseq, &temppoint );
 		}
+		CvSeq * hullseq = cvConvexHull2( texture_conv, 0, CV_CLOCKWISE, 0);
 		*/
+		CvMat hullmat = cvMat( 1, verts, CV_32SC2, hullmat_stor );
+		cvConvexHull2( &texture_conv, &hullmat, CV_CLOCKWISE, 1);
+
+		dirty = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
+		IplImage * dirty_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 3);
 		
+		cvSet( dirty_conhull, cvScalarAll(255) );
+
+		IplImage * clean_remapped_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 3);
+		cvSet( clean_remapped_conhull, cvScalarAll(255) );
+		
+		// now for each pixel in the bounding box, check if it's in the convex hull
+		for(int y = 0; y < unmodified_bound.height; y++) {
+			int origy = y + unmodified_bound.y;
+			for(int x = 0; x < unmodified_bound.width; x++) {
+				int origx = x + unmodified_bound.x;
+
+				if(cvPointPolygonTest( &hullmat, cvPointTo32f( cvPoint( origx, origy ) ), 0 ) == 100) {
+					cvSet2D( dirty_conhull, y, x, cvGet2D( dirty, origy, origx ) );
+					cvSet2D( clean_remapped_conhull, y, x, cvGet2D( clean_remapped, origy, origx ) );
+				}
+			}
+		}
+	 	cvReleaseMemStorage( &storage );
+
+		cvSaveImage( "conhull-clean.jpg", clean_remapped_conhull );	
+		cvSaveImage( "conhull-dirty.jpg", dirty_conhull );	
+
+		free( hullmat_stor );
+		free( texture_conv_stor );
+		cvReleaseImage( &dirty );
+		cvReleaseImage( &clean_remapped );
+		
+		IplImage * clean_thresh_conhull = cvCreateImage(cvGetSize(clean_remapped_conhull), IPL_DEPTH_8U, 1);
+		cvCvtColor( clean_remapped_conhull, clean_thresh_conhull, CV_BGR2GRAY );
+		
+		cvThreshold( clean_thresh_conhull, clean_thresh_conhull, 110, 255, CV_THRESH_BINARY );
+		cvSaveImage( "conhull-clean-thresh.jpg", clean_thresh_conhull );	
+
+		cvReleaseImage( &clean_remapped_conhull );
+		
+		IplImage * dirty_thresh_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 1);
+		cvCvtColor( dirty_conhull, dirty_thresh_conhull, CV_BGR2GRAY );
+		cvThreshold( dirty_thresh_conhull, dirty_thresh_conhull, 105, 255, CV_THRESH_BINARY );
+		
+		cvSaveImage( "conhull-dirty-thresh.jpg", dirty_thresh_conhull );	
+		
+		cvReleaseImage( &clean_thresh_conhull );
+		cvReleaseImage( &dirty_thresh_conhull );
+
 		cvReleaseMat( &blank_intrinsics );
-		/*
-		IplImage * img_overlaid = cvCreateImage(
-			cvSize(dirty->width*2,dirty->height),
-			dirty->depth,
-			dirty->nChannels);
-
-		for( int y=0; y< (img_overlaid->height); ++y ) {
-			for( int x=0; x< (img_overlaid->width/2); ++x ) {
-				cvSet2D(img_overlaid,y,x,cvGet2D(dirty,y,x));
-				cvSet2D(img_overlaid,y,x+dirty->width,cvGet2D(clean,y,x));
-			}
-		}
-		
-		// we now have vertices of the obj as positions in the dirty image
-		fprintf( output, "Vertices %d\n", verts );
-		for( int i=0; i<verts; ++i )
-		{
-			int curx = (int)texture->data.fl[2*i+0];
-			int cury = (int)texture->data.fl[2*i+1];
-			double curmin, curmax;
-			CvPoint minpoint, maxpoint;
-			
-			double tsize = 50;
-			double toff = tsize/2;
-
-			double osize = 200;
-			double ooff = osize/2;
-
-			//CvMat * result = cvCreateMat((int)(osize-tsize+1), (int)(osize-tsize+1), CV_32F); 
-			IplImage * result = cvCreateImage( cvSize( (int)(osize-tsize+1), (int)(osize-tsize+1) ), IPL_DEPTH_32F, 1); 
-
-			cvSetImageROI( dirty, cvRect((int)(curx-toff),(int)(cury-toff),(int)tsize,(int)tsize) );
-			cvSetImageROI( clean, cvRect((int)(curx-ooff),(int)(cury-ooff),(int)osize,(int)osize) );
-
-			cvMatchTemplate( clean, dirty, result, CV_TM_CCORR_NORMED );
-
-			cvMinMaxLoc( result, &curmin, &curmax, &minpoint, &maxpoint );
-
-			cvSaveImage( "result.jpg", result );
-			cvSaveImage( "template.jpg", dirty );
-			cvSaveImage( "window.jpg", clean );
-			printf("%d,%d\t->\t%d,%d\n",curx,cury,(int)(maxpoint.x+curx),(int)(maxpoint.y+cury));
-
-			cvWaitKey(0);
-
-			cvReleaseImage( &result );
-
-			cvLine( img_overlaid, cvPoint(curx,cury),cvPoint((int)(maxpoint.x+curx+dirty->width),(int)(maxpoint.y+cury)),CV_RGB(255,0,0),1,CV_AA,0 );
-		}
-		
-		cvSaveImage( "overlaid.jpg", img_overlaid );
-		cvReleaseImage( &img_overlaid );
-		*/
 
 		fprintf( output, "Vertices %d\n", verts );
 		for( int i=0; i<verts; ++i )
@@ -1005,8 +919,6 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 			}
 		}
 
-		// cvReleaseImage( &dirty_orig );
-		// cvReleaseImage( &clean );
 		fclose( input );
 		fclose( output );
 
