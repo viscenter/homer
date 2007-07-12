@@ -1,4 +1,4 @@
 %: %.cpp
-	g++ $< -o $@ -O3 -L/usr/local/lib -lcv -lcxcore -lhighgui
+	g++ $< -o $@ -O0 -g `pkg-config --cflags --libs opencv`
 
-all: calibrate colorstrip
+all: calibrate colorstrip thumbprint threshtemp opticalflow opticaltri undistort
