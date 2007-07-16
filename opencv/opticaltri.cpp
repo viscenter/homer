@@ -173,10 +173,10 @@ int main(int argc, char * argv[])
 	IplImage * temp = cvCreateImage(cvGetSize(image1), 32, 1);
 
 	int count = MAX_COUNT;
-	double quality = 0.03;
+	double quality = 0.5;
 	// double min_distance = 2;
-	double min_distance = 700;
-	int block_size = 3;
+	double min_distance = 50;
+	int block_size = 7;
 	int use_harris = 0;
 	int win_size = 10;
 	int flags = 0;
@@ -234,6 +234,24 @@ int main(int argc, char * argv[])
 	std::map<CvPoint, CvPoint> point_lookup_map;
 	std::vector<std::pair<CvPoint, CvPoint> > point_lookup;
 
+	// put corners in the point lookup as going to themselves
+	point_lookup_map[cvPoint(0,0)] = cvPoint(0,0);
+	point_lookup_map[cvPoint(0,image1->height-1)] = cvPoint(0,image1->height-1);
+	point_lookup_map[cvPoint(image1->width-1,0)] = cvPoint(image1->width-1,0);
+	point_lookup_map[cvPoint(image1->width-1,image1->height-1)] = cvPoint(image1->width-1,image1->height-1);
+
+	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(0,0), cvPoint(0,0)));
+	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(0,image1->height-1), cvPoint(0,image1->height-1)));
+	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(image1->width-1,0), cvPoint(image1->width-1,0)));
+	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(image1->width-1,image1->height-1), cvPoint(image1->width-1,image1->height-1)));
+
+	printf("Inserting corners...");
+	// put corners in the Delaunay subdivision
+	for(unsigned int i = 0; i < point_lookup.size(); i++) {
+		cvSubdivDelaunay2DInsert( delaunay, cvPointTo32f(point_lookup[i].first) );
+	}
+	printf("done.\n");
+
 	CvSubdiv2DEdge proxy_edge;
 	for(int i = 0; i < count; i++) {
 		if(status[i]) {
@@ -287,17 +305,6 @@ int main(int argc, char * argv[])
 	printf("%d %d\n",num_matches,num_out_matches);
 	printf("%d lookups\n",point_lookup_map.size());
 
-	// put corners in the point lookup as going to themselves
-	point_lookup_map[cvPoint(0,0)] = cvPoint(0,0);
-	point_lookup_map[cvPoint(0,image1->height)] = cvPoint(0,image1->height);
-	point_lookup_map[cvPoint(image1->width,0)] = cvPoint(image1->width,0);
-	point_lookup_map[cvPoint(image1->width,image1->height)] = cvPoint(image1->width,image1->height);
-
-	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(0,0), cvPoint(0,0)));
-	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(0,image1->height), cvPoint(0,image1->height)));
-	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(image1->width,0), cvPoint(image1->width,0)));
-	point_lookup.push_back(std::pair<CvPoint,CvPoint>(cvPoint(image1->width,image1->height), cvPoint(image1->width,image1->height)));
-
 	cvResetImageROI( image1 );
 
 	cvSaveImage("sparse.jpg", image1);
@@ -329,8 +336,8 @@ int main(int argc, char * argv[])
 			do {
 				CvSubdiv2DPoint* pt = cvSubdiv2DEdgeOrg( t );
 				if(count < 3) {
-					pt->pt.x = pt->pt.x > image1->width ? image1->width : pt->pt.x;
-					pt->pt.y = pt->pt.y > image1->height ? image1->height : pt->pt.y;
+					pt->pt.x = pt->pt.x >= image1->width ? image1->width-1 : pt->pt.x;
+					pt->pt.y = pt->pt.y >= image1->height ? image1->height-1 : pt->pt.y;
 					pt->pt.x = pt->pt.x < 0 ? 0 : pt->pt.x;
 					pt->pt.y = pt->pt.y < 0 ? 0 : pt->pt.y;
 
@@ -347,9 +354,9 @@ int main(int argc, char * argv[])
 			if( std::find(trivec.begin(), trivec.end(), temptri) == trivec.end() ) {
 				// push triangle in and draw
 				trivec.push_back(temptri);
-				// cvLine( image1, temptri.points[0], temptri.points[1], CV_RGB(255,0,0), 1, CV_AA, 0 );
-				// cvLine( image1, temptri.points[1], temptri.points[2], CV_RGB(255,0,0), 1, CV_AA, 0 );
-				// cvLine( image1, temptri.points[2], temptri.points[0], CV_RGB(255,0,0), 1, CV_AA, 0 );
+				cvLine( image1, temptri.points[0], temptri.points[1], CV_RGB(255,0,0), 1, CV_AA, 0 );
+				cvLine( image1, temptri.points[1], temptri.points[2], CV_RGB(255,0,0), 1, CV_AA, 0 );
+				cvLine( image1, temptri.points[2], temptri.points[0], CV_RGB(255,0,0), 1, CV_AA, 0 );
 
 				// compute barycentric computation vector for this triangle
 				CvMat * barycen = cvCreateMat( 3, 3, CV_32FC1 );
@@ -375,6 +382,10 @@ int main(int argc, char * argv[])
 		CV_NEXT_SEQ_ELEM( elem_size, reader );
 	}
 	printf("%d triangles...", trivec.size());
+	cvSaveImage("triangles.jpg", image1);
+	
+	cvSet( image1, cvScalarAll(255) );
+	IplImage * clean_nonthresh = cvLoadImage( "conhull-clean.jpg", CV_LOAD_IMAGE_COLOR );
 
 	// for each triangle
 	for(unsigned int i = 0; i < trivec.size(); i++) {
@@ -392,8 +403,8 @@ int main(int argc, char * argv[])
 			*/
 			CV_MAT_ELEM( *curpoints, CvPoint, 0, j ) = curtri.points[j];
 			printf("%d,%d\n",curtri.points[j].x,curtri.points[j].y);
-			
-			/*
+	
+			/*	
 			if((curtri.points[j] == cvPoint(0,0)) ||  (curtri.points[j] == cvPoint(0,image1->height)) ||(curtri.points[j] == cvPoint(image1->width,0)) ||(curtri.points[j] == cvPoint(image1->width,image1->height))) {
 				is_corner = true;
 				break;
@@ -460,8 +471,9 @@ int main(int argc, char * argv[])
 					cvMatMul( baryinvvec[i], curp, result );
 					// double u = result->data.fl[0]/result->data.fl[2];
 					// double v = result->data.fl[1]/result->data.fl[2];
-				
-					if( fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01 ) {
+			
+
+					if( (result->data.fl[0] > 0) && (result->data.fl[1] > 0) && (fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01) ) {
 					// if((u > 0) || (v > 0) /*&& ((u +v) < 1)*/ ) {
 						// printf("Barycentric: %f %f %f\n", result->data.fl[0], result->data.fl[1], result->data.fl[2]);
 						// this point is inside this triangle
@@ -470,13 +482,22 @@ int main(int argc, char * argv[])
 
 						CvMat * sourcepoint = cvCreateMat(3, 1, CV_32FC1);
 						cvMatMul( newcorners, result, sourcepoint );
-						double sourcex = sourcepoint->data.fl[0]/sourcepoint->data.fl[2];
-						double sourcey = sourcepoint->data.fl[1]/sourcepoint->data.fl[2];
+						double sourcex = sourcepoint->data.fl[0]/*/sourcepoint->data.fl[2]*/;
+						double sourcey = sourcepoint->data.fl[1]/*/sourcepoint->data.fl[2]*/;
 						if((sourcex >= 0) && (sourcey >= 0) && (sourcex < (image1->width)) && (sourcey < (image1->height))) {
 							// printf("%d,%d %d,%d\n",x,y,(int)sourcex,(int)sourcey);
-							cvSet2D( image1, y, x, cvGet2D( image2, (int)sourcey, (int)sourcex ) );
+							cvSet2D( image1, y, x, cvGet2D( clean_nonthresh, (int)sourcey, (int)sourcex ) );
 						}
+	
+						/*
+						if((i == 143) && (y == 3577) && (x > 2055) && (x < 2087)) {
+							printf("%d: %f, %f, %f\t%f, %f, %f\n",x,result->data.fl[0],result->data.fl[1],result->data.fl[2],
+									sourcepoint->data.fl[0],sourcepoint->data.fl[1],sourcepoint->data.fl[2]);
+						}
+						*/
+	
 						cvReleaseMat( &sourcepoint );
+						
 						// printf("Point %d,%d inside %d,%d %d,%d %d,%d\n",x,y,trivec[i].points[0].x,trivec[i].points[0].y,
 						//		trivec[i].points[1].x,trivec[i].points[1].y,trivec[i].points[2].x,trivec[i].points[2].y);
 
@@ -513,6 +534,8 @@ int main(int argc, char * argv[])
 		}
 	}
 	*/
+
+	cvReleaseImage( &clean_nonthresh );
 
 #ifdef OLD_BUSTED
 	for(int y = 0; y < image1->height; y++) {
