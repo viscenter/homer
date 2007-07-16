@@ -11,6 +11,9 @@
 
 #define DEBUG
 
+#define DIRTY_THRESH 105
+#define CLEAN_THRESH 110
+
 CvSize camSize;
 
 int findCorners( IplImage * im, CvSize dim, CvPoint2D32f * corners );
@@ -623,8 +626,8 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 
 
 		// thresh the images
-		cvThreshold( dirty, dirty, 105, 255, CV_THRESH_BINARY);
-		cvThreshold( clean, clean, 110, 255, CV_THRESH_BINARY);
+		cvThreshold( dirty, dirty, DIRTY_THRESH, 255, CV_THRESH_BINARY);
+		cvThreshold( clean, clean, CLEAN_THRESH, 255, CV_THRESH_BINARY);
 		
 		cvResetImageROI( dirty );
 		IplImage * dirty_orig = cvCreateImage( cvSize(dirty->width, dirty->height), dirty->depth, dirty->nChannels );
@@ -636,6 +639,7 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		original_bound.y += bind_offset;
 		original_bound.width -= bind_offset;
 		original_bound.height -= (bind_offset*3);
+		cvSaveImage("threshedunbound.jpg", dirty);
 		cvSetImageROI( dirty, original_bound );
 		cvSaveImage("threshedbound.jpg", dirty);
 		cvSaveImage("threshedclean.jpg", clean);
@@ -653,13 +657,16 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		double curarea;
 		int curcontour = 0;
 		int offset = 200;
+		
 		while( contours ) {
 			curarea = fabs(cvContourArea(contours));
-			if((curarea > 1000.0) && (curarea < 10000.0)) {
-				CvSeq * approxp = cvApproxPoly( contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP, cvContourPerimeter( contours ) * 0.02, 0 );
-				CvPoint * firstp = (CvPoint*)cvGetSeqElem( approxp, 0 );
+			if((curarea > 5000.0) && (curarea < 10000.0)) {
+				// CvSeq * approxp = cvApproxPoly( contours, sizeof(CvContour), storage, CV_POLY_APPROX_DP, cvContourPerimeter( contours ) * 0.001, 0 );
+				CvPoint firstp = *((CvPoint*)cvGetSeqElem( contours, 0 ));
+				// firstp = ((CvChain*)contours)->origin;
+				// printf("%d,%d:\t%d\n",firstp.x,firstp.y,(int)curarea);
 				cvResetImageROI( dirty_orig );
-				if( /*((int)cvGetReal2D( dirty_orig, firstp->y, firstp->x )) == 0*/ true ) {
+				if( ((int)cvGetReal2D( dirty_orig, firstp.y+1, firstp.x+1 )) == 0 /*true*/ ) {
 					printf("Area: %f\n",curarea);
 					// CvSeq * result = 
 					CvRect bounding_rect = cvBoundingRect(contours,0);
@@ -870,14 +877,14 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		IplImage * clean_thresh_conhull = cvCreateImage(cvGetSize(clean_remapped_conhull), IPL_DEPTH_8U, 1);
 		cvCvtColor( clean_remapped_conhull, clean_thresh_conhull, CV_BGR2GRAY );
 		
-		cvThreshold( clean_thresh_conhull, clean_thresh_conhull, 110, 255, CV_THRESH_BINARY );
+		cvThreshold( clean_thresh_conhull, clean_thresh_conhull, CLEAN_THRESH, 255, CV_THRESH_BINARY );
 		cvSaveImage( "conhull-clean-thresh.jpg", clean_thresh_conhull );	
 
 		cvReleaseImage( &clean_remapped_conhull );
 		
 		IplImage * dirty_thresh_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 1);
 		cvCvtColor( dirty_conhull, dirty_thresh_conhull, CV_BGR2GRAY );
-		cvThreshold( dirty_thresh_conhull, dirty_thresh_conhull, 105, 255, CV_THRESH_BINARY );
+		cvThreshold( dirty_thresh_conhull, dirty_thresh_conhull, DIRTY_THRESH, 255, CV_THRESH_BINARY );
 		
 		cvSaveImage( "conhull-dirty-thresh.jpg", dirty_thresh_conhull );	
 		
