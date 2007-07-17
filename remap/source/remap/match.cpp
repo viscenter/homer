@@ -26,116 +26,95 @@
 #define NN_SQ_DIST_RATIO_THR 0.49
 
 
-int main( int argc, char** argv )
+int match( char * img1fname, char * img2fname )
 {
-  IplImage* img1, * img2, * stacked, *img1orig, *img2orig;
-  struct feature* feat1, * feat2, * feat;
-  struct feature** nbrs;
-  struct kd_node* kd_root;
-  CvPoint pt1, pt2;
-  double d0, d1;
-  int n1, n2, k, i, m = 0;
+	double scale = 10.0;
 
-	/*
-  if( argc != 3 )
-    fatal_error( "usage: %s <img1> <img2>", argv[0] );
-		*/
+	IplImage* img1, * img2, * img1orig, * img2orig;
+
+	struct feature* feat1, * feat2, * feat;
+	struct feature** nbrs;
+	struct kd_node* kd_root;
+	CvPoint pt1, pt2;
+	double d0, d1;
+	int n1, n2, k, i, m = 0;
+
+	img1orig = cvLoadImage( img1fname, CV_LOAD_IMAGE_COLOR );
+	if( ! img1orig )
+		fatal_error( "unable to load image from %s", img1fname );
+  img1 = cvCreateImage( cvSize( (int)(img1orig->width/scale), (int)(img1orig->height/scale) ), img1orig->depth, img1orig->nChannels );
+	cvResize( img1orig, img1, CV_INTER_AREA );
+	cvReleaseImage( &img1orig );
   
-  img1 = cvLoadImage( argv[1], 1 );
-  if( ! img1 )
-    fatal_error( "unable to load image from %s", argv[1] );
-  img2 = cvLoadImage( argv[2], 1 );
-  if( ! img2 )
-    fatal_error( "unable to load image from %s", argv[2] );
-  stacked = stack_imgs( img1, img2 );
+	img2orig = cvLoadImage( img2fname, CV_LOAD_IMAGE_COLOR );
+	if( ! img2orig )
+		fatal_error( "unable to load image from %s", img2fname );
+  img2 = cvCreateImage( cvSize( (int)(img2orig->width/scale), (int)(img2orig->height/scale) ), img2orig->depth, img2orig->nChannels );
+	cvResize( img2orig, img2, CV_INTER_AREA );
+	cvReleaseImage( &img2orig );
 
-  fprintf( stderr, "Finding features in %s...\n", argv[1] );
+	fprintf( stdout, "Finding features in %s...\n", img1fname );
   n1 = sift_features( img1, &feat1 );
-  fprintf( stderr, "Finding features in %s...\n", argv[2] );
+  fprintf( stdout, "Finding features in %s...\n", img2fname );
   n2 = sift_features( img2, &feat2 );
   kd_root = kdtree_build( feat2, n2 );
-  for( i = 0; i < n1; i++ )
-    {
-      feat = feat1 + i;
-      k = kdtree_bbf_knn( kd_root, feat, 2, &nbrs, KDTREE_BBF_MAX_NN_CHKS );
-      if( k == 2 )
-	{
-	  d0 = descr_dist_sq( feat, nbrs[0] );
-	  d1 = descr_dist_sq( feat, nbrs[1] );
-	  if( d0 < d1 * NN_SQ_DIST_RATIO_THR )
-	    {
-	      pt1 = cvPoint( cvRound( feat->x ), cvRound( feat->y ) );
-	      pt2 = cvPoint( cvRound( nbrs[0]->x ), cvRound( nbrs[0]->y ) );
-	      pt2.y += img1->height;
-	      // cvLine( stacked, pt1, pt2, CV_RGB(255,0,255), 1, 8, 0 );
-	      m++;
-	      feat1[i].fwd_match = nbrs[0];
-	    }
+  for( i = 0; i < n1; i++ ) {
+		feat = feat1 + i;
+		k = kdtree_bbf_knn( kd_root, feat, 2, &nbrs, KDTREE_BBF_MAX_NN_CHKS );
+		if( k == 2 ) {
+			d0 = descr_dist_sq( feat, nbrs[0] );
+			d1 = descr_dist_sq( feat, nbrs[1] );
+			if( d0 < d1 * NN_SQ_DIST_RATIO_THR ) {
+				pt1 = cvPoint( cvRound( feat->x ), cvRound( feat->y ) );
+				pt2 = cvPoint( cvRound( nbrs[0]->x ), cvRound( nbrs[0]->y ) );
+				pt2.y += img1->height;
+				m++;
+				feat1[i].fwd_match = nbrs[0];
+			}
+		}
+		free( nbrs );
 	}
-      free( nbrs );
-    }
 
+	// scale feature coordinates back in to original image size
 	for( i = 0; i < n2; i++ ) {
-		feat2[i].img_pt.x *= 10.0;
-		feat2[i].img_pt.y *= 10.0;
+		feat2[i].img_pt.x *= scale;
+		feat2[i].img_pt.y *= scale;
 	}
 	for( i = 0; i < n1; i++ ) {
-		feat1[i].img_pt.x *= 10.0;
-		feat1[i].img_pt.y *= 10.0;
-
-		//if(feat1[i].fwd_match != NULL) {
-		//	printf("%d,%d\t->\t%d,%d\n",(int)feat1[i].x,(int)feat1[i].y,(int)feat1[i].fwd_match->x,(int)feat1[i].fwd_match->y);	
-		//}
+		feat1[i].img_pt.x *= scale;
+		feat1[i].img_pt.y *= scale;
 	}
   
-	fprintf( stderr, "Found %d total matches\n", m );
+	fprintf( stdout, "Found %d total matches\n", m );
   
-	//display_big_img( stacked, "Matches" );
-  //cvWaitKey( 0 );
-
-  /* 
-     UNCOMMENT BELOW TO SEE HOW RANSAC FUNCTION WORKS
-     
-     Note that this line above:
-     
-     feat1[i].fwd_match = nbrs[0];
-     
-     is important for the RANSAC function to work.
-  */
-  {
+	{
     CvMat* H;
     H = ransac_xform( feat1, n1, FEATURE_FWD_MATCH, lsq_homog, 4, 0.01,
 		      homog_xfer_err, 3.0, NULL, NULL );
-    if( H )
-      {
-				// H->data.db[3*0+2] *= 2;
-				// H->data.db[3*1+2] *= 2;
-				cvSave( "perspective.mat", H, "H", NULL, cvAttrList(NULL,NULL) );
-	IplImage* xformed;
-	img2orig = cvLoadImage( argv[4], CV_LOAD_IMAGE_COLOR );
-	xformed = cvCreateImage( cvGetSize( img2orig ), IPL_DEPTH_8U, 3 );
-	cvReleaseImage( &img2orig );
-	img1orig = cvLoadImage( argv[3], CV_LOAD_IMAGE_COLOR);
-	cvWarpPerspective( img1orig, xformed, H, 
-			   CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,
-			   cvScalarAll( 0 ) );
-	/*
-	cvNamedWindow( "Xformed", 1 );
-	cvShowImage( "Xformed", xformed );
-	cvWaitKey( 0 );
-	*/
-	cvSaveImage( "xformed.jpg", xformed );
-	cvReleaseImage( &img1orig );
-	cvReleaseImage( &xformed );
-	cvReleaseMat( &H );
-      }
-  }
+		printf("Perspective transform:\n");
+		for( i = 0; i < 3; i++ ) {
+			printf("%0.6f %0.6f %0.6f\n", H->data.db[3*i+0], H->data.db[3*i+1], H->data.db[3*i+2]);
+		}
+		if( H ) {
+			IplImage* xformed;
+			img2orig = cvLoadImage( img2fname, CV_LOAD_IMAGE_COLOR );
+			xformed = cvCreateImage( cvGetSize( img2orig ), IPL_DEPTH_8U, 3 );
+			cvReleaseImage( &img2orig );
+			img1orig = cvLoadImage( img1fname, CV_LOAD_IMAGE_COLOR);
+			cvWarpPerspective( img1orig, xformed, H, 
+						CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,
+						cvScalarAll( 0 ) );
+			cvSaveImage( "xformed.jpg", xformed );
+			cvReleaseImage( &img1orig );
+			cvReleaseImage( &xformed );
+			cvReleaseMat( &H );
+		}
+	}
 
-  cvReleaseImage( &stacked );
-  cvReleaseImage( &img1 );
-  cvReleaseImage( &img2 );
-  kdtree_release( kd_root );
-  free( feat1 );
-  free( feat2 );
-  return 0;
+	cvReleaseImage( &img1 );
+	cvReleaseImage( &img2 );
+	kdtree_release( kd_root );
+	free( feat1 );
+	free( feat2 );
+	return 0;
 }
