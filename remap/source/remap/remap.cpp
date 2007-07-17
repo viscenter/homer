@@ -618,18 +618,30 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 
 		cvReleaseImage( &dirty );
 
-		// CvMat * clean_texture = cvCreateMat( verts, 2, CV_32FC1 );
+		CvMat * clean_texture = cvCreateMat( verts, 2, CV_32FC1 );
 		CvMat * H;
 
-		/*
+		CvMat * tex_c3 = cvCreateMat( 1, verts, CV_32FC2 );
+		CvMat * clean_c3 = cvCreateMat( 1, verts, CV_32FC2 );
+		for(int i = 0; i < verts; i++) {
+			tex_c3->data.fl[2*i+0] = texture->data.fl[2*i+0];
+			tex_c3->data.fl[2*i+1] = texture->data.fl[2*i+1];
+		}
+
 		match( thumb_file, clean_file, &H );
 		
 		printf("Performing perspective transform on points...");
-		cvPerspectiveTransform( texture, clean_texture, H );
+		cvPerspectiveTransform( tex_c3, clean_c3, H );
+		for(int i = 0; i < verts; i++) {
+			clean_texture->data.fl[2*i+0] = clean_c3->data.fl[2*i+0];
+			clean_texture->data.fl[2*i+1] = clean_c3->data.fl[2*i+1];
+		}
 		printf("done.\n");
 
 		cvReleaseMat( &H );
-		*/
+
+		cvReleaseMat( &tex_c3 );
+		cvReleaseMat( &clean_c3 );
 
 		printf("Warping clean image to dirty image...");
 		match( clean_file, thumb_file, &H );
@@ -709,14 +721,14 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 					points->data.fl[3*i+0],
 					points->data.fl[3*i+2],
 					points->data.fl[3*i+1],
-					(texture->data.fl[2*i+0]+73.0)/camSize.width,
-					(texture->data.fl[2*i+1]+1.0)/camSize.height );
-					//(clean_texture->data.fl[2*i+0])/camSize.width,
-					//(clean_texture->data.fl[2*i+1])/camSize.height );
+					//(texture->data.fl[2*i+0]+73.0)/camSize.width,
+					//(texture->data.fl[2*i+1]+1.0)/camSize.height );
+					(clean_texture->data.fl[2*i+0])/camSize.width,
+					(clean_texture->data.fl[2*i+1])/camSize.height );
 		}
 		cvReleaseMat( &points );
 		cvReleaseMat( &texture );
-		//cvReleaseMat( &clean_texture );
+		cvReleaseMat( &clean_texture );
 		fgets( buf, sizeof(buf), input );
 		fgets( buf, sizeof(buf), input );
 		fgets( buf, sizeof(buf), input );
