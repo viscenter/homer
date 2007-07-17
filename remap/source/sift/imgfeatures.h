@@ -53,7 +53,7 @@ struct feature
   int d;                         /**< descriptor length */
   double descr[FEATURE_MAX_D];   /**< descriptor */
   int type;                      /**< feature type, OXFD or LOWE */
-  int class;                     /**< all-purpose feature class */
+  int feature_class;                     /**< all-purpose feature feature_class */
   struct feature* fwd_match;     /**< matching feature from forward image */
   struct feature* bck_match;     /**< matching feature from backmward image */
   struct feature* mdl_match;     /**< matching feature from model */

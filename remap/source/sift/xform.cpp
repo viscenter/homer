@@ -322,11 +322,11 @@ int get_matched_features( struct feature* features, int n, int mtype,
   struct ransac_data* rdata;
   int i, m = 0;
 
-  _matched = calloc( n, sizeof( struct feature* ) );
+  _matched = (struct feature**)calloc( n, sizeof( struct feature* ) );
   for( i = 0; i < n; i++ )
     if( get_match( features + i, mtype ) )
       {
-	rdata = malloc( sizeof( struct ransac_data ) );
+	rdata = (struct ransac_data*)malloc( sizeof( struct ransac_data ) );
 	memset( rdata, 0, sizeof( struct ransac_data ) );
 	rdata->orig_feat_data = features[i].feature_data;
 	_matched[m] = features + i;
@@ -402,7 +402,7 @@ struct feature** draw_ransac_sample( struct feature** features, int n,
       rdata->sampled = 0;
     }
 
-  sample = calloc( m, sizeof( struct feature* ) );
+  sample = (struct feature**)calloc( m, sizeof( struct feature* ) );
   for( i = 0; i < m; i++ )
     {
       do
@@ -440,8 +440,8 @@ void extract_corresp_pts( struct feature** features, int n, int mtype,
   CvPoint2D64f* _pts, * _mpts;
   int i;
 
-  _pts = calloc( n, sizeof( CvPoint2D64f ) );
-  _mpts = calloc( n, sizeof( CvPoint2D64f ) );
+  _pts = (CvPoint2D64f*)calloc( n, sizeof( CvPoint2D64f ) );
+  _mpts = (CvPoint2D64f*)calloc( n, sizeof( CvPoint2D64f ) );
 
   if( mtype == FEATURE_MDL_MATCH )
     for( i = 0; i < n; i++ )
@@ -501,7 +501,7 @@ int find_consensus( struct feature** features, int n, int mtype,
   double err;
   int i, in = 0;
 
-  _consensus = calloc( n, sizeof( struct feature* ) );
+  _consensus = (struct feature**)calloc( n, sizeof( struct feature* ) );
 
   if( mtype == FEATURE_MDL_MATCH )
     for( i = 0; i < n; i++ )

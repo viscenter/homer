@@ -106,7 +106,7 @@ int kdtree_bbf_knn( struct kd_node* kd_root, struct feature* feat, int k,
       return -1;
     }
 
-  _nbrs = calloc( k, sizeof( struct feature* ) );
+  _nbrs = (feature**)calloc( k, sizeof( struct feature* ) );
   min_pq = minpq_init();
   minpq_insert( min_pq, kd_root, 0 );
   while( min_pq->n > 0  &&  t < max_nn_chks )
@@ -130,7 +130,7 @@ int kdtree_bbf_knn( struct kd_node* kd_root, struct feature* feat, int k,
       for( i = 0; i < expl->n; i++ )
 	{
 	  tree_feat = &expl->features[i];
-	  bbf_data = malloc( sizeof( struct bbf_data ) );
+	  bbf_data = (struct bbf_data*)malloc( sizeof( struct bbf_data ) );
 	  if( ! bbf_data )
 	    {
 	      fprintf( stderr, "Warning: unable to allocate memory,"
@@ -148,7 +148,7 @@ int kdtree_bbf_knn( struct kd_node* kd_root, struct feature* feat, int k,
   minpq_release( &min_pq );
   for( i = 0; i < n; i++ )
     {
-      bbf_data = _nbrs[i]->feature_data;
+      bbf_data = (struct bbf_data*)_nbrs[i]->feature_data;
       _nbrs[i]->feature_data = bbf_data->old_data;
       free( bbf_data );
     }
@@ -159,7 +159,7 @@ int kdtree_bbf_knn( struct kd_node* kd_root, struct feature* feat, int k,
   minpq_release( &min_pq );
   for( i = 0; i < n; i++ )
     {
-      bbf_data = _nbrs[i]->feature_data;
+      bbf_data = (struct bbf_data*)_nbrs[i]->feature_data;
       _nbrs[i]->feature_data = bbf_data->old_data;
       free( bbf_data );
     }
@@ -197,7 +197,7 @@ int kdtree_bbf_spatial_knn( struct kd_node* kd_root, struct feature* feat,
   int i, n, t = 0;
 
   n = kdtree_bbf_knn( kd_root, feat, max_nn_chks, &all_nbrs, max_nn_chks );
-  sp_nbrs = calloc( k, sizeof( struct feature* ) );
+  sp_nbrs = (feature**)calloc( k, sizeof( struct feature* ) );
   for( i = 0; i < n; i++ )
     {
       if( model )
@@ -251,7 +251,7 @@ struct kd_node* kd_node_init( struct feature* features, int n )
 {
   struct kd_node* kd_node;
 
-  kd_node = malloc( sizeof( struct kd_node ) );
+  kd_node = (struct kd_node*)malloc( sizeof( struct kd_node ) );
   memset( kd_node, 0, sizeof( struct kd_node ) );
   kd_node->ki = -1;
   kd_node->features = features;
@@ -327,7 +327,7 @@ void assign_part_key( struct kd_node* kd_node )
     }
 
   /* partition key value is median of descriptor values at ki */
-  tmp = calloc( n, sizeof( double ) );
+  tmp = (double*)calloc( n, sizeof( double ) );
   for( i = 0; i < n; i++ )
     tmp[i] = features[i].descr[ki];
   kv = median_select( tmp, n );
@@ -388,7 +388,7 @@ double rank_select( double* array, int n, int r )
   insertion_sort( tmp, rem_elts );
 
   /* recursively find the median of the medians of the groups of 5 */
-  tmp = calloc( gr_tot, sizeof( double ) );
+  tmp = (double*)calloc( gr_tot, sizeof( double ) );
   for( i = 0, j = 2; i < gr_5; i++, j += 5 )
     tmp[i] = array[j];
   if( rem_elts )
@@ -555,7 +555,7 @@ struct kd_node* explore_to_leaf( struct kd_node* kd_node, struct feature* feat,
 	  expl = expl->kd_right;
 	}
       
-      if( minpq_insert( min_pq, unexpl, ABS( kv - feat->descr[ki] ) ) )
+      if( minpq_insert( min_pq, unexpl, (int)ABS( kv - feat->descr[ki] ) ) )
 	{
 	  fprintf( stderr, "Warning: unable to insert into PQ, %s, line %d\n",
 		   __FILE__, __LINE__ );
