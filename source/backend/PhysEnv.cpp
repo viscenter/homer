@@ -413,16 +413,18 @@ void CPhysEnv::RenderWorld()
 	{
 		if(m_Dirty) {
 			// printf("generating display list\n");
+#ifdef USE_DISPLAY_LISTS
 			if(glIsList(m_DisplayList) == GL_TRUE) {
 				glDeleteLists(m_DisplayList,1);
 			}
 			m_DisplayList = glGenLists(1);
 			glNewList(m_DisplayList,GL_COMPILE);
-			
+			printf("Generating display list\n");
+#endif
+
 			if (m_Spring && m_DrawSprings)
 			{
 				glLineWidth(2);
-				
 
 				glBegin(GL_LINES);
 
@@ -679,14 +681,17 @@ void CPhysEnv::RenderWorld()
 				glEnd();
 			}
 				// try may texture if you can!
-			
+
+#ifdef USE_DISPLAY_LISTS
 			glEndList();
 			m_Dirty = false;
+#endif
 		} // end if dirty
+#ifdef USE_DISPLAY_LISTS
 		glCallList(m_DisplayList);
+#endif
 	}
 	glFlush();
-
 }
 
 void CPhysEnv::GetNearestPoint(int x, int y)
