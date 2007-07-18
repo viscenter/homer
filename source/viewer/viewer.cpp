@@ -36,10 +36,11 @@ float flattening = 0;
 
 GLUI *glui;
 GLUI_Listbox *fileBox;
+GLUI_Translation *trans_z;
 GLUI_Button *reloadButton;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
 
 deque<string> fileNames;
 
@@ -60,7 +61,8 @@ void init(char *meshfile, char *texturefile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glShadeModel(GL_SMOOTH);
-	
+	glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
+
 	glClearDepth(1.0);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
@@ -70,7 +72,7 @@ void init(char *meshfile, char *texturefile)
 	glPointSize(8.0f);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_LIGHTING);
-	
+
 	glEnable(GL_FRONT_FACE); // both sides of polygon
 	
 	// performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
@@ -141,7 +143,14 @@ void Display()
 	}
 	*/
 	
-	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+	// glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT );
+	glEnable (GL_BLEND);
+  glEnable (GL_POLYGON_SMOOTH);
+  glEnable (GL_LINE_SMOOTH);
+  glEnable (GL_POINT_SMOOTH);
+
+  glDisable (GL_DEPTH_TEST);
 
 	glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
@@ -243,6 +252,11 @@ void control_cb(int control)
 			DeleteSystem();
 			DisableGLUIandInit();
 			break;
+		case ZOOM_ID:
+			// do something here where we can zoom in very slowly up close and very quickly far away
+  		// printf("%f\n",obj_pos[2]+initial_obj_pos[2]+1.635);
+			// trans_z->set_speed( );
+			break;
 		case WRINKLING_ID:
 			NewSystem();
 			DisableGLUIandInit();
@@ -308,9 +322,9 @@ void setup_glui(void)
   trans_xy->set_speed( .01 );
 
 	// obj_pos[2] = 8.964999;
-  GLUI_Translation *trans_z = 
-    glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2] );
-  trans_z->set_speed( .1 );
+  trans_z = 
+    glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2], ZOOM_ID, control_cb );
+  trans_z->set_speed( 0.1 );
 
   glui->add_statictext( "" );
  
@@ -361,7 +375,7 @@ int main( int argc, char** argv )
 	
 	glutInit( &argc, argv );
 
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
 	
 	glutDisplayFunc( Display );
