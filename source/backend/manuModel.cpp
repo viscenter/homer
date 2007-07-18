@@ -21,6 +21,34 @@
 GLint TEXW;
 GLint TEXH;
 
+int isExtensionSupported(const char *extension)
+{
+  const GLubyte *extensions = NULL;
+  const GLubyte *start;
+  GLubyte *where, *terminator;
+
+  /* Extension names should not have spaces. */
+  where = (GLubyte *) strchr(extension, ' ');
+  if (where || *extension == '\0')
+    return 0;
+  extensions = glGetString(GL_EXTENSIONS);
+  /* It takes a bit of care to be fool-proof about parsing the
+     OpenGL extensions string. Don't be fooled by sub-strings,
+     etc. */
+  start = extensions;
+  for (;;) {
+    where = (GLubyte *) strstr((const char *) start, extension);
+    if (!where)
+      break;
+    terminator = where + strlen(extension);
+    if (where == start || *(where - 1) == ' ')
+      if (*terminator == ' ' || *terminator == '\0')
+        return 1;
+    start = terminator;
+  }
+  return 0;
+}
+
 manuModel::manuModel()
 {
 	textureID = 3903;
@@ -422,6 +450,7 @@ void manuModel::readTextureSplit(pixel *colorIma)
 					}
 					currentTexture->nextTexture = NULL;
 					currentTexture->id = textureID++;
+				
 					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
 					for(int h = (i*border_h); (h < (i*border_h+TEXH)) && (h < imaH); h++) {
 						for(int w = (j*border_w); (w < (j*border_w+TEXW)) && (w < imaW); w++) {
@@ -594,12 +623,32 @@ void manuModel::initTexture( texture *inTexture )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	
-	if(textureFormat == COLOR)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int)inTexture->w, (int)inTexture->h,
+	if(textureFormat == COLOR) {
+#ifdef GL_EXT_texture_compression_s3tc
+		if(isExtensionSupported("GL_EXT_texture_compression_s3tc")) {
+			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
 						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
-	else
+		}	
+		else
+#endif
+#ifdef GL_ARB_texture_compression
+		if(isExtensionSupported("GL_ARB_texture_compression")) {
+			if( SMT_DEBUG ) printf("Using texture compression\n"); 
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
+						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+		}
+		else 
+#endif
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int)inTexture->w, (int)inTexture->h,
+						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+		}
+	}
+	else {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, (int)inTexture->w, (int)inTexture->h,
 						0, GL_LUMINANCE, GL_UNSIGNED_BYTE, inTexture->ima );
+	}
 }
 
 void manuModel::BindNextTexture()
