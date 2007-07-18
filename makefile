@@ -25,7 +25,8 @@ UNAME	:=	$(shell uname -s)
 LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm 
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
-CFLAGS	:=	-O3 
+CFLAGS	:=	-O3
+# CFLAGS  += -DUSE_DISPLAY_LISTS 
 
 # Linux-specific flags
 ifneq (,$(findstring Linux,$(UNAME)))	
@@ -67,7 +68,16 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 	# export CXX		:=	/usr/local/bin/g++
 	# CFLAGS	+=  -ftree-vectorize -fopenmp
 	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include -I/opt/local/include/boost-1_34
-	LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore -lstdc++ -lm -lglui -framework OpenGL -framework GLUT -framework Foundation
+  # LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore 
+	LIBS	:=	/opt/local/lib/libboost_program_options-1_34.a \
+						/usr/local/lib/lib_highgui.a \
+						/usr/local/lib/lib_cv.a \
+						/usr/local/lib/lib_cxcore.a \
+						/opt/local/lib/libjpeg.a \
+						/opt/local/lib/libpng.a \
+						/opt/local/lib/libtiff.a \
+						/opt/local/lib/libz.a
+	LIBS  += -lstdc++ -lm -lglui -framework OpenGL -framework GLUT -framework Foundation -framework Carbon
 endif
 
 # gprof flags
