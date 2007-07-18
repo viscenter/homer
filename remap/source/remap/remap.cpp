@@ -556,6 +556,31 @@ bool extrinsics( const char * file, const char * image, CvSize dim,
 	return false;
 }
 
+void conhull( const char * outputfname, const char * inputfname, CvRect bound, CvMat * hull )
+{
+	IplImage * input = cvLoadImage( inputfname, CV_LOAD_IMAGE_COLOR );
+	IplImage * output = cvCreateImage(cvSize(bound.width,bound.height), IPL_DEPTH_8U, 3);
+
+	cvSet( output, cvScalarAll(255) );
+
+	// now for each pixel in the bounding box, check if it's in the convex hull
+	for(int y = 0; y < bound.height; y++) {
+		int origy = y + bound.y;
+		for(int x = 0; x < bound.width; x++) {
+			int origx = x + bound.x;
+
+			if(cvPointPolygonTest( hull, cvPointTo32f( cvPoint( origx, origy ) ), 0 ) == 100) {
+				cvSet2D( output, y, x, cvGet2D( input, origy, origx ) );
+			}
+		}
+	}
+	
+	cvSaveImage( outputfname, output );
+	
+	cvReleaseImage( &input );
+	cvReleaseImage( &output );
+}
+
 bool mapTexture( const char * file, const char * thumb_file, const char * clean_file, CvMat *K, CvMat *d, CvMat *r, CvMat *t )
 {
 	FILE * input = fopen( file, "r" );
@@ -654,8 +679,10 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		cvSaveImage( "remapped.jpg", clean_remapped );
 
 		cvReleaseImage( &clean );
+		cvReleaseImage( &clean_remapped );
 		printf("done.\n");
 
+		
 		CvMemStorage * storage = cvCreateMemStorage();
 		CvPoint * texture_conv_stor = (CvPoint*)malloc(verts*sizeof(CvPoint));
 		CvPoint * hullmat_stor = (CvPoint*)malloc(verts*sizeof(CvPoint));
@@ -667,51 +694,26 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		CvMat hullmat = cvMat( 1, verts, CV_32SC2, hullmat_stor );
 		cvConvexHull2( &texture_conv, &hullmat, CV_CLOCKWISE, 1);
 
-		dirty = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
-		IplImage * dirty_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 3);
-		
-		cvSet( dirty_conhull, cvScalarAll(255) );
-
-		IplImage * clean_remapped_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 3);
-		cvSet( clean_remapped_conhull, cvScalarAll(255) );
-		
-		// now for each pixel in the bounding box, check if it's in the convex hull
-		for(int y = 0; y < unmodified_bound.height; y++) {
-			int origy = y + unmodified_bound.y;
-			for(int x = 0; x < unmodified_bound.width; x++) {
-				int origx = x + unmodified_bound.x;
-
-				if(cvPointPolygonTest( &hullmat, cvPointTo32f( cvPoint( origx, origy ) ), 0 ) == 100) {
-					cvSet2D( dirty_conhull, y, x, cvGet2D( dirty, origy, origx ) );
-					cvSet2D( clean_remapped_conhull, y, x, cvGet2D( clean_remapped, origy, origx ) );
-				}
-			}
-		}
-	 	cvReleaseMemStorage( &storage );
-
-		cvSaveImage( "conhull-clean.jpg", clean_remapped_conhull );	
-		cvSaveImage( "conhull-dirty.jpg", dirty_conhull );	
+		conhull("conhull-dirty.jpg", thumb_file, unmodified_bound, &hullmat );
+		conhull("conhull-clean.jpg", "remapped.jpg", unmodified_bound, &hullmat );
+	 	
+		cvReleaseMemStorage( &storage );
 
 		free( hullmat_stor );
 		free( texture_conv_stor );
-		cvReleaseImage( &dirty );
-		cvReleaseImage( &clean_remapped );
 		
-		IplImage * clean_thresh_conhull = cvCreateImage(cvGetSize(clean_remapped_conhull), IPL_DEPTH_8U, 1);
-		cvCvtColor( clean_remapped_conhull, clean_thresh_conhull, CV_BGR2GRAY );
+		IplImage * clean_thresh_conhull = cvLoadImage( "conhull-clean.jpg", CV_LOAD_IMAGE_GRAYSCALE );
 		
 		cvThreshold( clean_thresh_conhull, clean_thresh_conhull, CLEAN_THRESH, 255, CV_THRESH_BINARY );
 		cvSaveImage( "conhull-clean-thresh.jpg", clean_thresh_conhull );	
 
-		cvReleaseImage( &clean_remapped_conhull );
+		cvReleaseImage( &clean_thresh_conhull );
 		
-		IplImage * dirty_thresh_conhull = cvCreateImage(cvSize(unmodified_bound.width,unmodified_bound.height), IPL_DEPTH_8U, 1);
-		cvCvtColor( dirty_conhull, dirty_thresh_conhull, CV_BGR2GRAY );
+		IplImage * dirty_thresh_conhull = cvLoadImage( "conhull-dirty.jpg", CV_LOAD_IMAGE_GRAYSCALE );
 		cvThreshold( dirty_thresh_conhull, dirty_thresh_conhull, DIRTY_THRESH, 255, CV_THRESH_BINARY );
 		
 		cvSaveImage( "conhull-dirty-thresh.jpg", dirty_thresh_conhull );	
 		
-		cvReleaseImage( &clean_thresh_conhull );
 		cvReleaseImage( &dirty_thresh_conhull );
 
 		fprintf( output, "Vertices %d\n", verts );
