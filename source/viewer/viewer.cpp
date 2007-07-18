@@ -36,6 +36,7 @@ float flattening = 0;
 
 GLUI *glui;
 GLUI_Listbox *fileBox;
+GLUI_Button *reloadButton;
 
 // User IDs for callbacks
 enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
@@ -217,6 +218,7 @@ void InitFromFileNames(int pos) {
 
 void DisableGLUIandInit(void)
 {
+	reloadButton->disable();
 	glui->disable();
 	InitFromFileNames(fileBox->get_int_val());
 	glui->enable();
@@ -233,6 +235,7 @@ void control_cb(int control)
 			ToggleVerticesAndSprings();
 			break;
 		case FLATTENING_ID:
+			reloadButton->enable();
 			// glui->disable();
 			performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_TRUE ); 
 			break;
@@ -301,13 +304,13 @@ void setup_glui(void)
   view_rot->set_spin( 1.0 );
 
   GLUI_Translation *trans_xy = 
-    glui->add_translation( "Translate", GLUI_TRANSLATION_XY, obj_pos );
+    glui->add_translation( "Move", GLUI_TRANSLATION_XY, obj_pos );
   trans_xy->set_speed( .01 );
 
 	// obj_pos[2] = 8.964999;
   GLUI_Translation *trans_z = 
     glui->add_translation( "Zoom", GLUI_TRANSLATION_Z, &obj_pos[2] );
-  trans_z->set_speed( .01 );
+  trans_z->set_speed( .1 );
 
   glui->add_statictext( "" );
  
@@ -329,7 +332,8 @@ void setup_glui(void)
 
   glui->add_button_to_panel( actions_panel, "Flatten" , FLATTENING_ID, control_cb);
 
-  glui->add_button_to_panel( actions_panel, "Wrinkle" , WRINKLING_ID, control_cb);
+  reloadButton = glui->add_button_to_panel( actions_panel, "Reload" , WRINKLING_ID, control_cb);
+	reloadButton->disable();
 
   glui->add_statictext( "" );
   
