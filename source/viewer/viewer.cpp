@@ -218,10 +218,10 @@ void InitFromFileNames(int pos) {
 
 void DisableGLUIandInit(void)
 {
-	reloadButton->disable();
 	glui->disable();
 	InitFromFileNames(fileBox->get_int_val());
 	glui->enable();
+	reloadButton->disable();
 }
 
 void control_cb(int control)
