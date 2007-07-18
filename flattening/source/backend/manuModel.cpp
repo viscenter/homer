@@ -477,6 +477,47 @@ void manuModel::readTextureSplit(pixel *colorIma)
 
 }
 
+/*
+void manuModel::readTextureSplit2(pixel *colorIma)
+{
+	int num_sizes = (int)(log((double)TEXH)/log(2.0));
+	int *allowed_sizes = malloc(sizeof(int)*num_sizes);
+	int *texture_check = calloc(num_sizes*num_sizes,sizeof(int));
+	for(int i = 0; i < num_sizes; i++) {
+		allowed_sizes[i] = (int)pow(2.0,(double)(i+1));
+	}
+	bool tex_memory_full;
+	GLint test_width = 0, test_height = 0;
+
+
+	if( !YL_UseTriangularTextureMap) {
+		if( colorIma != NULL ){
+			// check what texture sizes we can allocate now
+			tex_memory_full = true;
+			for(int i = 0; i < num_sizes; i++) {
+				for(int j = 0; j < num_sizes; j++) {
+					glTexImage2D(GL_PROXY_TEXTURE_2D,  0,  GL_LUMINANCE, allowed_sizes[i], allowed_sizes[j], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+					glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &test_width);
+					glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &test_height);
+					if((test_width != 0) && (test_height != 0)) {
+						tex_memory_full = false;
+						texture_check[i * num_sizes + j] = 1;
+					}
+					else {
+						texture_check[i * num_sizes + j] = 0;
+					}
+				}
+			}
+			// read in the max allowed texture from the image
+
+			// 
+		}
+	}
+
+	free((int*)allowed_sizes);
+}
+*/
+
 void manuModel::readTexture(char *filename)
 {
 	/**************************************************************/
@@ -622,6 +663,7 @@ void manuModel::initTexture( texture *inTexture )
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	
 	if(textureFormat == COLOR) {
 #ifdef GL_EXT_texture_compression_s3tc
@@ -629,7 +671,13 @@ void manuModel::initTexture( texture *inTexture )
 			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
 						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
-		}	
+		// gluBuild2DMipmaps(GL_TEXTURE_2D, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
+		//				GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+		GLint errval = glGetError();
+		if(errval) {
+			// printf("Error: %s\n",gluErrorString(errval));
+		}
+	}
 		else
 #endif
 #ifdef GL_ARB_texture_compression
