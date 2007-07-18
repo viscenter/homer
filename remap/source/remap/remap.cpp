@@ -673,8 +673,10 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		
 		IplImage * clean_remapped = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
 		clean = cvLoadImage( clean_file, CV_LOAD_IMAGE_COLOR );
-		
-		cvWarpPerspective( clean, clean_remapped, H, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(0) ); 
+	
+		camSize = cvGetSize(clean);
+
+		cvWarpPerspective( clean, clean_remapped, H, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(255) ); 
 		
 		cvSaveImage( "remapped.jpg", clean_remapped );
 
@@ -719,14 +721,22 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		fprintf( output, "Vertices %d\n", verts );
 		for( int i=0; i<verts; ++i )
 		{
+			double u = (clean_texture->data.fl[2*i+0])/camSize.width;
+			double v = (clean_texture->data.fl[2*i+1])/camSize.height;
+
+			if( !((u >= 0.0) && (u <= 1.0) && (v >= 0.0) && (v <= 1.0))) {
+				u = 0.0;
+				v = 0.0;
+			}
 			fprintf( output, "%.6f %.6f %.6f %.6f %.6f\n",
-					points->data.fl[3*i+0],
-					points->data.fl[3*i+2],
-					points->data.fl[3*i+1],
-					//(texture->data.fl[2*i+0]+73.0)/camSize.width,
-					//(texture->data.fl[2*i+1]+1.0)/camSize.height );
-					(clean_texture->data.fl[2*i+0])/camSize.width,
-					(clean_texture->data.fl[2*i+1])/camSize.height );
+			points->data.fl[3*i+0],
+			points->data.fl[3*i+2],
+			points->data.fl[3*i+1],
+			//(texture->data.fl[2*i+0]+73.0)/camSize.width,
+			//(texture->data.fl[2*i+1]+1.0)/camSize.height );
+			u,
+			v);
+
 		}
 		cvReleaseMat( &points );
 		cvReleaseMat( &texture );

@@ -104,6 +104,16 @@ int match( const char * img1fname, const char * img2fname, CvMat **H )
 			printf("%0.6f %0.6f %0.6f\n", (*H)->data.db[3*i+0], (*H)->data.db[3*i+1], (*H)->data.db[3*i+2]);
 		}
 		/*
+		CvMat * Hinv = cvCreateMat(3,3,CV_64FC1);
+		cvInvert( *H, Hinv, CV_LU );
+		printf("Inverse transform:\n");
+		for( i = 0; i < 3; i++ ) {
+			printf("%0.6f %0.6f %0.6f\n", Hinv->data.db[3*i+0], Hinv->data.db[3*i+1], Hinv->data.db[3*i+2]);
+		}
+		cvReleaseMat( &Hinv );
+		*/
+
+		/*
 		if( H ) {
 			IplImage* xformed;
 			img2orig = cvLoadImage( img2fname, CV_LOAD_IMAGE_COLOR );
