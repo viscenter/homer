@@ -15,7 +15,7 @@
 
 #include <errno.h>
 #include <dirent.h>
-#include <vector>
+#include <deque>
 
 #include <iostream>
 #include <string>
@@ -40,7 +40,7 @@ GLUI_Listbox *fileBox;
 // User IDs for callbacks
 enum { FLATTENING_ID = 300, FILE_SELECT_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
 
-vector<string> fileNames;
+deque<string> fileNames;
 
 int main_window;
 bool screenshot = false;
@@ -120,6 +120,7 @@ void update_once(void)
 	obj_pos[1] = 0.685;
  	obj_pos[2] = 8.964999;
 	*/
+	
 	glutPostRedisplay();
 }
 
@@ -159,15 +160,13 @@ void Display()
 	RenderScene();
 
 	glPopMatrix();
-	
+
 	if(screenshot) {
 		screenshot = false;
 		// glui->enable();
 	}
 	
 	glutSwapBuffers();
-	
-	// glutPostRedisplay();
 }
 
 void getFileNames()
@@ -189,7 +188,7 @@ void getFileNames()
 		if(file[0] != '.') {
 			if(file.compare(file.length()-5,5,".surf") == 0) {
 				if(file.compare(file.length()-8,3,"-lo") == 0) {
-					fileNames.push_back(file);
+					fileNames.push_front(file);
 				}
 				else if((file.compare(file.length()-8,3,"-hi") == 0) && (texsize > 2048)) {
 					fileNames.push_back(file);
@@ -360,12 +359,12 @@ int main( int argc, char** argv )
 
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
+	
+	glutDisplayFunc( Display );
 
 	setup_glui();
 	
 	InitFromFileNames(0);
-
-	glutDisplayFunc( Display );
 
 	update_once();
 
