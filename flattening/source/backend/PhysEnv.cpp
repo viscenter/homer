@@ -421,51 +421,10 @@ void CPhysEnv::RenderWorld()
 			glNewList(m_DisplayList,GL_COMPILE);
 			printf("Generating display list\n");
 #endif
-
-			if (m_Spring && m_DrawSprings)
-			{
-				glLineWidth(2);
-
-				glBegin(GL_LINES);
-
-				glColor3f(0.0f,1.0f,0.0f);
-
-				tempSpring = m_Spring;
-
-				for (int loop = 0; loop < m_SpringCnt; loop++)
-				{
-					// Only draw normal springs or the cloth "structural" ones
-					if ((tempSpring->type == MANUAL_SPRING) ||
-						(tempSpring->type == STRUCTURAL_SPRING && m_DrawStructural))
-					{
-						glVertex3fv((float *)&m_CurrentSys[tempSpring->p1].pos);
-						glVertex3fv((float *)&m_CurrentSys[tempSpring->p2].pos);
-					}
-					tempSpring++;
-				}
-				
-			
-				if (m_MouseForceActive)	// DRAW MOUSESPRING FORCE
-				{
-					if (m_Pick[0] > -1)
-					{
-						glColor3f(0.8f,0.0f,0.8f);
-						glVertex3fv((float *)&m_CurrentSys[m_Pick[0]].pos);
-						glVertex3fv((float *)&m_MouseDragPos[0]);
-					}
-					if (m_Pick[1] > -1)
-					{
-						glColor3f(0.8f,0.0f,0.8f);
-						glVertex3fv((float *)&m_CurrentSys[m_Pick[1]].pos);
-						glVertex3fv((float *)&m_MouseDragPos[1]);
-					}
-				}
-				
-				glEnd();
-			}
 			
 			if (manu)
 			{
+				glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_ONE);
 				glColor3f(1.0, 1.0, 1.0 );
 				glPolygonMode( GL_FRONT, GL_FILL );
 				glPolygonMode( GL_BACK, GL_FILL );
@@ -601,30 +560,36 @@ void CPhysEnv::RenderWorld()
 					// manu->BindArrTexture(0);
 					for (int i = 0; i < manu->nTrig; i++ ){
 						int idx, cur_x, cur_y;
-						bindBestTextureSplit(manu->trigList[i].idx1,
-								manu->trigList[i].idx2, manu->trigList[i].idx3,cur_x,cur_y);
+						if( (manu->verList[manu->trigList[i].idx1].u1 != 0.0) && (manu->verList[manu->trigList[i].idx1].v1 != 0.0) &&
+								(manu->verList[manu->trigList[i].idx2].u1 != 0.0) && (manu->verList[manu->trigList[i].idx2].v1 != 0.0) &&
+								(manu->verList[manu->trigList[i].idx3].u1 != 0.0) && (manu->verList[manu->trigList[i].idx3].v1 != 0.0) ) {
 
-						idx = manu->trigList[i].idx1;
-						// bindTextureSplit(idx);	
-						glBegin(GL_POLYGON);
-						tempParticle = &m_CurrentSys[idx];
-						// renderTextureSplit(idx);	
-						renderBestTextureSplit(idx,cur_x,cur_y);	
 
-						glVertex3fv((float *)&tempParticle->pos);
-						idx = manu->trigList[i].idx2;
-						tempParticle = &m_CurrentSys[idx];
-						// renderTextureSplit(idx);	
-						renderBestTextureSplit(idx,cur_x,cur_y);	
+							bindBestTextureSplit(manu->trigList[i].idx1,
+									manu->trigList[i].idx2, manu->trigList[i].idx3,cur_x,cur_y);
 
-						glVertex3fv((float *)&tempParticle->pos);
-						idx = manu->trigList[i].idx3;
-						tempParticle = &m_CurrentSys[idx];
-						// renderTextureSplit(idx);		
-						renderBestTextureSplit(idx,cur_x,cur_y);	
+							idx = manu->trigList[i].idx1;
+							// bindTextureSplit(idx);	
+							glBegin(GL_POLYGON);
+							tempParticle = &m_CurrentSys[idx];
+							// renderTextureSplit(idx);	
+							renderBestTextureSplit(idx,cur_x,cur_y);	
 
-						glVertex3fv((float *)&tempParticle->pos);
-						glEnd();
+							glVertex3fv((float *)&tempParticle->pos);
+							idx = manu->trigList[i].idx2;
+							tempParticle = &m_CurrentSys[idx];
+							// renderTextureSplit(idx);	
+							renderBestTextureSplit(idx,cur_x,cur_y);	
+
+							glVertex3fv((float *)&tempParticle->pos);
+							idx = manu->trigList[i].idx3;
+							tempParticle = &m_CurrentSys[idx];
+							// renderTextureSplit(idx);		
+							renderBestTextureSplit(idx,cur_x,cur_y);	
+
+							glVertex3fv((float *)&tempParticle->pos);
+							glEnd();
+						}
 					}
 					glDisable(GL_TEXTURE_2D);
 
@@ -653,9 +618,54 @@ void CPhysEnv::RenderWorld()
 				}
 			}
 		 } // end if (manu)
+			
+			if (m_Spring && m_DrawSprings)
+			{
+				glLineWidth(2);
+				
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+				glBegin(GL_LINES);
+
+				glColor4f(0.0f,1.0f,0.0f,0.25f);
+
+				tempSpring = m_Spring;
+
+				for (int loop = 0; loop < m_SpringCnt; loop++)
+				{
+					// Only draw normal springs or the cloth "structural" ones
+					if ((tempSpring->type == MANUAL_SPRING) ||
+						(tempSpring->type == STRUCTURAL_SPRING && m_DrawStructural))
+					{
+						glVertex3fv((float *)&m_CurrentSys[tempSpring->p1].pos);
+						glVertex3fv((float *)&m_CurrentSys[tempSpring->p2].pos);
+					}
+					tempSpring++;
+				}
+				
+			
+				if (m_MouseForceActive)	// DRAW MOUSESPRING FORCE
+				{
+					if (m_Pick[0] > -1)
+					{
+						glColor3f(0.8f,0.0f,0.8f);
+						glVertex3fv((float *)&m_CurrentSys[m_Pick[0]].pos);
+						glVertex3fv((float *)&m_MouseDragPos[0]);
+					}
+					if (m_Pick[1] > -1)
+					{
+						glColor3f(0.8f,0.0f,0.8f);
+						glVertex3fv((float *)&m_CurrentSys[m_Pick[1]].pos);
+						glVertex3fv((float *)&m_MouseDragPos[1]);
+					}
+				}
+				
+				glEnd();
+			}
 			if (m_DrawVertices)
 			{
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 				glColor3f(1.0, 0.0, 0.0);
 				glPointSize(vertexPointSize);
 				glBegin(GL_POINTS);
