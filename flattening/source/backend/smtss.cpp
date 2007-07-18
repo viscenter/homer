@@ -25,6 +25,10 @@ extern "C" {
 
 extern GLint width, height;
 
+extern GLfloat axisAngleX, axisAngleY, distance, fov;
+extern GLfloat lookAtX, lookAtY, lookAtZ;
+
+
 /*
 unsigned char *flipdata( unsigned char *data, int width, int height )
 {
@@ -184,8 +188,19 @@ int Screenshot_TR( char filename[], int image_width, int image_height )
 		glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
 		// glPushMatrix();
 		// glLoadIdentity();
+		glPushMatrix();
+	
+		glLoadIdentity();	
+		
+		GLfloat cameraX, cameraY, cameraZ;
+		 cameraX = ( sinf(axisAngleX) * ( cosf(axisAngleY) * distance ) ) + lookAtX;
+		 cameraY = ( sinf(axisAngleY) * distance ) + lookAtY;
+		 cameraZ = ( cosf(axisAngleX) * ( cosf(axisAngleY) * distance ) ) + lookAtZ;
+		 
+		 gluLookAt ( cameraX, cameraY, cameraZ, lookAtX, lookAtY, lookAtZ, 0.0, 1.0, 0.0);
+
 		m_PhysEnv->RenderWorld();
-		// glPopMatrix();
+		glPopMatrix();
 		more = trEndTile(tr);
 
 		/* save tile into tile row buffer*/
