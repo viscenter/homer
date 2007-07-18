@@ -145,7 +145,7 @@ void Display()
 
 	glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
-  glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 15.0 );
+  glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 1500.0 );
 	// gluPerspective( 60.0, xy_aspect, 1.0, 2000.0 );
 
   glMatrixMode( GL_MODELVIEW );
