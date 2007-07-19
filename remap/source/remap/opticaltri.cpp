@@ -15,6 +15,7 @@
 
 //#define MAX_COUNT 16384
 #define MAX_COUNT 131072
+#define MIN_VAL   -0.00001
 
 struct Triangle {
 	CvPoint points[3];
@@ -40,6 +41,16 @@ bool operator==(const CvPoint &p1, const CvPoint &p2) {
 	return false;
 }
 
+void print_point(const CvPoint pt) {
+	printf("%d,%d\n",pt.x,pt.y);
+}
+
+void print_triangle(const Triangle t) {
+	for(int i = 0; i < 3; i++) {
+		print_point(t.points[i]);
+	}
+}
+
 bool operator==(const Triangle &t1, const Triangle &t2) {
 	if( ( (t1.points[0] == t2.points[0]) &&
 				(t1.points[1] == t2.points[1]) &&
@@ -59,6 +70,12 @@ bool operator==(const Triangle &t1, const Triangle &t2) {
 			( (t1.points[0] == t2.points[2]) &&
 				(t1.points[1] == t2.points[1]) &&
 				(t1.points[2] == t2.points[0]) ) )	{
+		/*
+		print_triangle(t1);
+		printf("equals\n");
+		print_triangle(t2);
+		printf("\n");
+		*/
 		return true;
 	}
 	return false;
@@ -315,12 +332,14 @@ int opticaltri(void)
 	int total = delaunay->edges->total;
 	int elem_size = delaunay->edges->elem_size;
 
-	cvStartReadSeq( (CvSeq*)(delaunay->edges), &reader, 0 );
 
 	std::vector<Triangle> trivec;
 	std::vector<CvMat *> baryinvvec;
 
-	for( int i = 0; i < total; i++ ) {
+	for( int i = 0; i < total*2; i++ ) {
+		if((i == 0) || (i == total)) {
+			cvStartReadSeq( (CvSeq*)(delaunay->edges), &reader, 0 );
+		}
 		CvQuadEdge2D* edge = (CvQuadEdge2D*)(reader.ptr);
 
 		if( CV_IS_SET_ELEM( edge ))	{
@@ -344,7 +363,10 @@ int opticaltri(void)
 					printf("More than 3 edges\n");
 				}
 				count++;
-				t = cvSubdiv2DGetEdge( t, CV_NEXT_AROUND_LEFT );
+				if(i < total)
+					t = cvSubdiv2DGetEdge( t, CV_NEXT_AROUND_LEFT );
+				else
+					t = cvSubdiv2DGetEdge( t, CV_NEXT_AROUND_RIGHT );
 			} while( t != curedge );
 			
 			// check that triangle is not already in
@@ -392,7 +414,7 @@ int opticaltri(void)
 		std::map<CvPoint,CvPoint>::iterator piter[3];
 		
 		printf("Triangle %d / %d\n",i,trivec.size());
-		bool is_corner = false;
+		int is_corner = 0;
 		for(int j = 0; j < 3; j++) {
 			/*
 			curpoints->data.i[2*j+0] = curtri.points[j].x;
@@ -401,12 +423,10 @@ int opticaltri(void)
 			CV_MAT_ELEM( *curpoints, CvPoint, 0, j ) = curtri.points[j];
 			printf("%d,%d\n",curtri.points[j].x,curtri.points[j].y);
 	
-			/*	
-			if((curtri.points[j] == cvPoint(0,0)) ||  (curtri.points[j] == cvPoint(0,image1->height)) ||(curtri.points[j] == cvPoint(image1->width,0)) ||(curtri.points[j] == cvPoint(image1->width,image1->height))) {
-				is_corner = true;
-				break;
+			if((curtri.points[j] == cvPoint(0,0)) ||  (curtri.points[j] == cvPoint(0,image1->height - 1)) ||(curtri.points[j] == cvPoint(image1->width - 1,0)) ||(curtri.points[j] == cvPoint(image1->width - 1,image1->height - 1))) {
+				is_corner++;
 			}
-			*/
+			
 
 			for(unsigned int k = 0; k < point_lookup.size(); k++) {
 				std::pair<CvPoint,CvPoint> thispair = point_lookup[k];
@@ -425,7 +445,7 @@ int opticaltri(void)
 		}
 			
 		// if((piter[0] != point_lookup_map.end()) && (piter[1] != point_lookup_map.end()) && (piter[2] != point_lookup_map.end())) {
-		if(!is_corner) {
+		if(is_corner < 3) {
 			CvMat * newcorners = cvCreateMat( 3, 3, CV_32FC1 );
 			newcorners->data.fl[3*0+0] = target.points[0].x;
 			newcorners->data.fl[3*0+1] = target.points[1].x;
@@ -468,17 +488,24 @@ int opticaltri(void)
 					cvMatMul( baryinvvec[i], curp, result );
 					// double u = result->data.fl[0]/result->data.fl[2];
 					// double v = result->data.fl[1]/result->data.fl[2];
-			
 
-					if( (result->data.fl[0] > 0) && (result->data.fl[1] > 0) && (fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01) ) {
+					/*
+					if((i == 3019) && (y == 1329) && (x > 2505) && (x < 2584)) {
+						printf("Range %d: %f, %f, %f\t%f, %f, %f\n",x,result->data.fl[0],result->data.fl[1],result->data.fl[2],
+								sourcepoint->data.fl[0],sourcepoint->data.fl[1],sourcepoint->data.fl[2]);
+					}
+					*/
+
+					if( (result->data.fl[0] > MIN_VAL) && (result->data.fl[1] > MIN_VAL) && (result->data.fl[2] > MIN_VAL) && (fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01) ) {
 					// if((u > 0) || (v > 0) /*&& ((u +v) < 1)*/ ) {
 						// printf("Barycentric: %f %f %f\n", result->data.fl[0], result->data.fl[1], result->data.fl[2]);
 						// this point is inside this triangle
 						// printf("Point %d,%d inside %d,%d %d,%d %d,%d\n",x,y,trivec[i].points[0].x,trivec[i].points[0].y,
 						//	trivec[i].points[1].x,trivec[i].points[1].y,trivec[i].points[2].x,trivec[i].points[2].y);
-
+						
 						CvMat * sourcepoint = cvCreateMat(3, 1, CV_32FC1);
-						cvMatMul( newcorners, result, sourcepoint );
+						cvMatMul( newcorners, result, sourcepoint );	
+					
 						double sourcex = sourcepoint->data.fl[0]/*/sourcepoint->data.fl[2]*/;
 						double sourcey = sourcepoint->data.fl[1]/*/sourcepoint->data.fl[2]*/;
 						if((sourcex >= 0) && (sourcey >= 0) && (sourcex < (image1->width)) && (sourcey < (image1->height))) {
@@ -486,18 +513,11 @@ int opticaltri(void)
 							cvSet2D( image1, y, x, cvGet2D( clean_nonthresh, (int)sourcey, (int)sourcex ) );
 						}
 	
-						/*
-						if((i == 143) && (y == 3577) && (x > 2055) && (x < 2087)) {
-							printf("%d: %f, %f, %f\t%f, %f, %f\n",x,result->data.fl[0],result->data.fl[1],result->data.fl[2],
-									sourcepoint->data.fl[0],sourcepoint->data.fl[1],sourcepoint->data.fl[2]);
-						}
-						*/
-	
-						cvReleaseMat( &sourcepoint );
 						
 						// printf("Point %d,%d inside %d,%d %d,%d %d,%d\n",x,y,trivec[i].points[0].x,trivec[i].points[0].y,
 						//		trivec[i].points[1].x,trivec[i].points[1].y,trivec[i].points[2].x,trivec[i].points[2].y);
 
+						cvReleaseMat( &sourcepoint );
 					}
 					cvReleaseMat( &result );
 					cvReleaseMat( &curp );
@@ -507,144 +527,9 @@ int opticaltri(void)
 		}
 		cvReleaseMat( &curpoints );
 	}
-	/*
-	for(int y = 0; y < image1->height; y++) {
-		for(int x = 0; x < image1->width; x++) {
-			CvMat * curp = cvCreateMat(3, 1, CV_32FC1);
-			CvMat * result = cvCreateMat(3, 1, CV_32FC1);
-			curp->data.fl[0] = x;
-			curp->data.fl[1] = y;
-			curp->data.fl[2] = 1;
-			for(unsigned int i = 0; i < baryinvvec.size(); i++) {
-				cvMatMul( baryinvvec[i], curp, result );
-				double u = result->data.fl[0]/result->data.fl[2];
-				double v = result->data.fl[1]/result->data.fl[2];
-				if((u > 0) && (v > 0) && (u + v < 1)) {
-					// printf("Point %d,%d inside %d,%d %d,%d %d,%d\n",x,y,trivec[i].points[0].x,trivec[i].points[0].y,
-					//		trivec[i].points[1].x,trivec[i].points[1].y,trivec[i].points[2].x,trivec[i].points[2].y);
-
-					break;
-				}
-			}
-			cvReleaseMat( &result );
-			cvReleaseMat( &curp );
-		}
-	}
-	*/
 
 	cvReleaseImage( &clean_nonthresh );
 
-#ifdef OLD_BUSTED
-	for(int y = 0; y < image1->height; y++) {
-		for(int x = 0; x < image1->width; x++) {
-			CvSubdiv2DPointLocation locate_result;
-			CvSubdiv2DEdge on_edge;
-			CvSubdiv2DPoint * on_vertex;
-			CvPoint curpoint = cvPoint( x, y );
-			locate_result = cvSubdiv2DLocate( delaunay, cvPointTo32f( curpoint ),
-				&on_edge, &on_vertex );
-			if( (locate_result != CV_PTLOC_OUTSIDE_RECT) && (locate_result != CV_PTLOC_ERROR) ) {
-				if( locate_result == CV_PTLOC_VERTEX ) { // this point is on a vertex
-					for(int i = 0; i < count; i++) {
-						if(((on_vertex->pt).x == delaunay_points[i].x) && ((on_vertex->pt).y == delaunay_points[i].y)) {
-							cvSet2D( image1, y, x, cvGet2D( image2, cvPointFrom32f(dest_points[i]).y, cvPointFrom32f(dest_points[i]).x ) );
-							break;
-						}
-					}
-				}
-				else if( locate_result == CV_PTLOC_ON_EDGE ) { // this point is on an edge
-					CvSubdiv2DPoint* org_pt;
-					CvSubdiv2DPoint* dst_pt;
-					CvPoint org_pt_warp;
-					CvPoint dst_pt_warp;
-						
-					org_pt = cvSubdiv2DEdgeOrg(on_edge);
-					dst_pt = cvSubdiv2DEdgeDst(on_edge);
-
-					for(int i = 0; i < count; i++) {
-						if(((org_pt->pt).x == delaunay_points[i].x) && ((org_pt->pt).y == delaunay_points[i].y)) {
-							org_pt_warp = cvPointFrom32f(dest_points[i]);
-						}
-						if(((dst_pt->pt).x == delaunay_points[i].x) && ((dst_pt->pt).y == delaunay_points[i].y)) {
-							dst_pt_warp = cvPointFrom32f(dest_points[i]);
-						}
-					}
-
-					// compute vector length of original edge and current point
-					double original_length;
-					double cur_length; 
-					if( (int)((org_pt->pt).x) == curpoint.x ) { // vertical line
-						original_length = fabs((org_pt->pt).y - (dst_pt->pt).y);
-						cur_length = fabs((org_pt->pt).y - curpoint.y);
-					}
-					else if( (int)((org_pt->pt).y) == curpoint.y ) { // horizontal line
-						original_length = fabs((org_pt->pt).x - (dst_pt->pt).x);
-						cur_length = fabs((org_pt->pt).x - curpoint.x);
-					}
-					else { // sloped line
-				 		original_length = sqrt(pow((org_pt->pt).x - (dst_pt->pt).x, 2.0) + pow((org_pt->pt).y - (dst_pt->pt).y, 2.0));
-						cur_length = sqrt(pow((org_pt->pt).x - curpoint.x, 2.0) + pow((org_pt->pt).y - curpoint.y, 2.0));
-					}
-					// compute ratio of this point on the edge
-					double ratio = cur_length / original_length;
-					// copy this point from the destination edge
-					CvPoint point_in_original;
-					int warped_x = (int)(org_pt_warp.x - dst_pt_warp.x);
-					int warped_y = (int)(org_pt_warp.y - dst_pt_warp.y);
-					if( org_pt_warp.x == curpoint.x ) { // vertical line
-						point_in_original.y = (int)(org_pt_warp.y + (ratio * (org_pt_warp.y - dst_pt_warp.y)));
-						point_in_original.x = org_pt_warp.x;
-					}
-					else if(org_pt_warp.y == curpoint.y) { // horizontal line
-						point_in_original.x = (int)(org_pt_warp.x + (ratio * (org_pt_warp.x - dst_pt_warp.x)));
-						point_in_original.y = org_pt_warp.y;
-					}
-					else { // sloped line
-						double destination_length = sqrt(pow((org_pt_warp).x - (dst_pt_warp).x, 2.0) + pow((org_pt_warp).y - (dst_pt_warp).y, 2.0));
-						double scaled_length = ratio * destination_length;
-						double dest_angle = atan(fabs( (double)warped_y / (double)warped_x ));
-						double xdist = scaled_length * cos(dest_angle);
-						double ydist = scaled_length * sin(dest_angle);
-						xdist = warped_x > 0 ? xdist : xdist * -1;
-						ydist = warped_y > 0 ? ydist : ydist * -1;
-						point_in_original.x = (int)( org_pt_warp.x + xdist);
-						point_in_original.y = (int)( org_pt_warp.y + ydist);
-					}
-					
-					if((point_in_original.x >= 0) && (point_in_original.y >= 0) && (point_in_original.x < (image1->width)) && (point_in_original.y < (image1->height))) {
-						cvSet2D( image1, y, x, cvGet2D( image2, point_in_original.y, point_in_original.x ) );
-					}
-					else {
-						printf("Edge point outside image\n");
-					}
-					// cvSet2D( image1, y, x, cvGet2D( image2, (int)(org_pt_warp.x + (ratio * (org_pt_warp.x - dst_pt_warp.x))), 
-					//			(int)(org_pt_warp.y + (ratio * (org_pt_warp.y - dst_pt_warp.y))) ) );
-				}
-				else if( locate_result == CV_PTLOC_INSIDE ) { // this point is inside a facet (triangle)
-					/*
-					printf("Point inside facet: %d, %d\n",curpoint.x,curpoint.y);
-					int count = 0;
-					CvPoint * origins = (CvPoint*)malloc(sizeof(CvPoint)*3);
-					CvSubdiv2DEdge t = on_edge;
-					// count number of edges
-					do {
-						CvSubdiv2DPoint* pt = cvSubdiv2DEdgeOrg( t );
-						if(count < 3) {
-							origins[count] = cvPoint( cvRound(pt->pt.x), cvRound(pt->pt.y));
-							printf("%d,%d\t",origins[count].x,origins[count].y);
-						}
-						count++;
-						t = cvSubdiv2DGetEdge( t, CV_NEXT_AROUND_LEFT );
-					} while(t != on_edge);
-					printf("\n");
-
-					free(origins);
-					*/
-				}
-			}
-		}
-	}
-#endif // OLD_BUSTED
 	printf("done.\n");
 
 	cvSaveImage("fullwarp.jpg", image1);
