@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "match.h"
+#include "opticaltri.h"
 
 #define DEBUG
 
@@ -76,6 +77,8 @@ int main( int argc, char * argv[] )
 		return -3;
 	}
 	printf("Mapped texture\n");
+
+	opticaltri();
 
 	printf("Success\n");
 	return 0;

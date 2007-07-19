@@ -1,4 +1,5 @@
 #ifndef __MATCH_H__
+#define __MATCH_H__
 
 #include <cxcore.h>
 

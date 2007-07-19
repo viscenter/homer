@@ -11,6 +11,8 @@
 #include <map>
 #include <algorithm>
 
+#include "opticaltri.h"
+
 //#define MAX_COUNT 16384
 #define MAX_COUNT 131072
 
@@ -157,15 +159,10 @@ void draw_subdiv( IplImage* img, CvSubdiv2D* subdiv, CvPoint2D32f * unwarped_poi
 		}
 }
 
-int opticaltri(int argc, char * argv[])
+int opticaltri(void)
 {
-	if(argc < 2) {
-		fprintf(stderr, "%s image1 image2\n", argv[0]);
-		return 1;
-	}
-
-	char * im1fname = argv[1];
-	char * im2fname = argv[2];
+	char * im1fname = "conhull-dirty-thresh.jpg";
+	char * im2fname = "conhull-clean-thresh.jpg";
 
 	IplImage * image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_GRAYSCALE);
 
