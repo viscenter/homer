@@ -65,7 +65,7 @@ void init(char *meshfile, char *texturefile)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glShadeModel(GL_SMOOTH);
-	glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
+	//glBlendFunc (GL_SRC_ALPHA_SATURATE, GL_ONE);
 
 	glClearDepth(1.0);
 	glDepthFunc(GL_LEQUAL);
@@ -147,15 +147,16 @@ void Display()
 	}
 	*/
 	
-	// glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
-	glClear( GL_COLOR_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT );
+  /*	
+  glClear( GL_COLOR_BUFFER_BIT );
 	glEnable (GL_BLEND);
   glEnable (GL_POLYGON_SMOOTH);
   glEnable (GL_LINE_SMOOTH);
   glEnable (GL_POINT_SMOOTH);
 
   glDisable (GL_DEPTH_TEST);
-
+  */
 	glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
   glFrustum( -xy_aspect*.04, xy_aspect*.04, -.04, .04, .1, 1500.0 );
@@ -389,7 +390,7 @@ int main( int argc, char** argv )
 	
 	glutInit( &argc, argv );
 
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | /*GLUT_ALPHA |*/ GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
 	
 	glutDisplayFunc( Display );
