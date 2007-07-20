@@ -25,6 +25,10 @@ using namespace std;
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
+#define DETACHED_CONTROLS 0
+
+extern int isExtensionSupported(const char *extension);
+
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
 // float view_rotate[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
@@ -275,12 +279,17 @@ void control_cb(int control)
 void MyReshapeCanvas( int width, int height )
 {
 	int tx, ty, tw, th;
-	GLUI_Master.get_viewport_area( &tx, &ty, &tw, &th );
-  glViewport( tx, ty, tw, th );
+	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+		xy_aspect = (float)width / (float)height;
+	}
+	else {
+		GLUI_Master.get_viewport_area( &tx, &ty, &tw, &th );
+		glViewport( tx, ty, tw, th );
+		xy_aspect = (float)tw / (float)th;
+	}
 
 	ReshapeCanvas(width,height);
 
-	xy_aspect = (float)tw / (float)th;
 	glutPostRedisplay();
 }
 
@@ -295,13 +304,18 @@ void MyGlutIdle( void )
 
 void setup_glui(void)
 {
-	GLUI_Master.set_glutReshapeFunc(MyReshapeCanvas);
-  /*** Create the side subwindow ***/
-  glui = GLUI_Master.create_glui_subwindow( main_window, 
-					    GLUI_SUBWINDOW_LEFT );
-
-
-   //******Add list box containing image file names**********
+	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+		glui = GLUI_Master.create_glui( "Controls" );
+		glutReshapeFunc( MyReshapeCanvas );
+	}
+	else {	
+		GLUI_Master.set_glutReshapeFunc(MyReshapeCanvas);
+		/*** Create the side subwindow ***/
+		glui = GLUI_Master.create_glui_subwindow( main_window, 
+								GLUI_SUBWINDOW_LEFT );
+	}
+	
+  //******Add list box containing image file names**********
   fileBox = glui->add_listbox( "File: ", NULL, FILE_SELECT_ID, control_cb);
   getFileNames();
   for(unsigned int i=0; i < fileNames.size(); i++)
