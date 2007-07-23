@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "opticaltri.h"
+#include "siftgrid.h"
 
 //#define MAX_COUNT 16384
 #define MAX_COUNT 131072
@@ -246,7 +247,8 @@ int opticaltri(void)
 	CvPoint2D32f * dest_points;
 	CvPoint2D32f * delaunay_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
 
-	count = opticalflow( im1fname, im2fname, source_points, dest_points, status ); 
+	// count = opticalflow( im1fname, im2fname, source_points, dest_points, status ); 
+	count = findsiftpoints( "conhull-dirty.jpg", "conhull-clean.jpg", source_points, dest_points, status ); 
 
 	IplImage * image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_COLOR);
 
@@ -262,7 +264,7 @@ int opticaltri(void)
 
 	int num_matches = 0;
 	int num_out_matches = 0;
-	int max_dist = 30;
+	int max_dist = 50;
 	int offset = 200;	
 
 	// put corners in the point lookup as going to themselves
