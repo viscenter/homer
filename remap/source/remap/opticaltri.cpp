@@ -15,7 +15,7 @@
 
 //#define MAX_COUNT 16384
 #define MAX_COUNT 131072
-#define MIN_VAL   -0.00001
+#define MIN_VAL   -0.0001
 
 struct Triangle {
 	CvPoint points[3];
@@ -176,28 +176,24 @@ void draw_subdiv( IplImage* img, CvSubdiv2D* subdiv, CvPoint2D32f * unwarped_poi
 		}
 }
 
-int opticaltri(void)
+int opticalflow( char * im1fname, char * im2fname, CvPoint2D32f * &source_points, CvPoint2D32f * &dest_points, char * &status )
 {
-	char * im1fname = "conhull-dirty-thresh.jpg";
-	char * im2fname = "conhull-clean-thresh.jpg";
-
-	IplImage * image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_GRAYSCALE);
-
-	IplImage * eigenvalues = cvCreateImage(cvGetSize(image1), 32, 1);
-	IplImage * temp = cvCreateImage(cvGetSize(image1), 32, 1);
-
 	int count = MAX_COUNT;
-	double quality = 0.5;
+	double quality = 0.15;
 	// double min_distance = 2;
-	double min_distance = 50;
+	double min_distance = 3;
 	int block_size = 7;
 	int use_harris = 0;
 	int win_size = 10;
 	int flags = 0;
 
-	CvPoint2D32f * source_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
-	CvPoint2D32f * dest_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
-	CvPoint2D32f * delaunay_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
+	source_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
+	dest_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
+	
+	IplImage * image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_GRAYSCALE);
+
+	IplImage * eigenvalues = cvCreateImage(cvGetSize(image1), 32, 1);
+	IplImage * temp = cvCreateImage(cvGetSize(image1), 32, 1);
 
 	cvGoodFeaturesToTrack( image1, eigenvalues, temp, source_points, &count,
 			quality, min_distance, 0, block_size, use_harris, 0.04 );
@@ -217,7 +213,7 @@ int opticaltri(void)
 
 	IplImage * image2 = cvLoadImage(im2fname, CV_LOAD_IMAGE_GRAYSCALE);
 
-	char * status = (char*)cvAlloc(sizeof(char)*MAX_COUNT);
+	status = (char*)cvAlloc(sizeof(char)*MAX_COUNT);
 
 	IplImage * pyramid = cvCreateImage( cvGetSize(image1), IPL_DEPTH_8U, 1 );
 	IplImage * second_pyramid = cvCreateImage( cvGetSize(image2), IPL_DEPTH_8U, 1 );
@@ -229,24 +225,45 @@ int opticaltri(void)
 		flags);
 	printf("done.\n");
 
-	int num_matches = 0;
-	int num_out_matches = 0;
-	int max_dist = 30;
-	int offset = 200;
+	cvReleaseImage( &image1 );
+	cvReleaseImage( &image2 );
+
+	cvReleaseImage( &pyramid );
+	cvReleaseImage( &second_pyramid );
+
+	return count;
+}
+
+int opticaltri(void)
+{
+	char * im1fname = "conhull-dirty-thresh.jpg";
+	char * im2fname = "conhull-clean-thresh.jpg";
+
+	int count = MAX_COUNT;
+	char * status;
 	
+	CvPoint2D32f * source_points;
+	CvPoint2D32f * dest_points;
+	CvPoint2D32f * delaunay_points = (CvPoint2D32f*)cvAlloc(MAX_COUNT*sizeof(CvPoint2D32f));
+
+	count = opticalflow( im1fname, im2fname, source_points, dest_points, status ); 
+
+	IplImage * image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_COLOR);
+
 	CvMemStorage * storage = cvCreateMemStorage(0);
 	CvSubdiv2D * delaunay = cvCreateSubdivDelaunay2D( cvRect(0,0,image1->width,image1->height), storage);
 
-	cvReleaseImage(&image1);
-	cvReleaseImage(&image2);
-	
-	image1 = cvLoadImage(im1fname, CV_LOAD_IMAGE_COLOR);
-	image2 = cvLoadImage(im2fname, CV_LOAD_IMAGE_COLOR);
+	IplImage * image2 = cvLoadImage(im2fname, CV_LOAD_IMAGE_COLOR);
 
 	cvSet( image1, cvScalarAll(255) );
 
 	std::map<CvPoint, CvPoint> point_lookup_map;
 	std::vector<std::pair<CvPoint, CvPoint> > point_lookup;
+
+	int num_matches = 0;
+	int num_out_matches = 0;
+	int max_dist = 30;
+	int offset = 200;	
 
 	// put corners in the point lookup as going to themselves
 	point_lookup_map[cvPoint(0,0)] = cvPoint(0,0);
@@ -282,7 +299,8 @@ int opticaltri(void)
 				
 					point_lookup_map[source] = dest;
 					point_lookup.push_back(std::pair<CvPoint,CvPoint>(source,dest));
-					delaunay_points[i] = (cvSubdivDelaunay2DInsert( delaunay, cvPointTo32f(source) ))->pt;
+					// delaunay_points[i] = 
+					(cvSubdivDelaunay2DInsert( delaunay, cvPointTo32f(source) ))->pt;
 					cvSetImageROI( image1, cvRect(source.x-8,source.y-8,8*2,8*2) );
 					cvResetImageROI( image2 );
 					cvGetRectSubPix( image2, image1, dest_points[i] );
@@ -548,7 +566,7 @@ int opticaltri(void)
 
 	// cvCalcSubdivVoronoi2D( delaunay );
 	printf("Drawing subdivisions on unwarped image...");
-	draw_subdiv( image2, delaunay, delaunay_points, dest_points, count, status );
+	// draw_subdiv( image2, delaunay, delaunay_points, dest_points, count, status );
 	// draw_subdiv( image2, delaunay, NULL, NULL, 0, NULL );
 	printf("done.\n");
 
