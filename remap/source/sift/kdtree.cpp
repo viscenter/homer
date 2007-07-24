@@ -489,7 +489,8 @@ void partition_features( struct kd_node* kd_node )
     if( features[i].descr[ki] <= kv )
       {
 	tmp = features[++j];
-	features[j] = features[i];
+	if(j != i)
+		features[j] = features[i];
 	features[i] = tmp;
 	if( features[j].descr[ki] == kv )
 	  p = j;
