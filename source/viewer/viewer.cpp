@@ -79,7 +79,7 @@ void init(char *meshfile, char *texturefile)
 
 	glEnable(GL_FRONT_FACE); // both sides of polygon
 	
-	// performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
+	performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DEFINE_MESH_TYPE, PERFORM_ACTION_FALSE );
 	
 	LoadFilename( meshfile, 0 ); // meshFilename
