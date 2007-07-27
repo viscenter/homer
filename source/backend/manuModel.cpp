@@ -801,6 +801,22 @@ manuModel::replaceTexture(char *filename)
 */
 }
 
+void loadMipped(GLenum internalformat, int w, int h, void * data)
+{
+	gluBuild2DMipmaps(GL_TEXTURE_2D, internalformat, w, h,
+						GL_RGB, GL_UNSIGNED_BYTE, data );
+	errtest(__FILE__,__LINE__,__FUNCTION__);
+	GLint size_in_bytes;
+	for(int i = 0; i <= 11; i++) {
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size_in_bytes);
+		errtest(__FILE__,__LINE__,__FUNCTION__);
+		printf("Compressed texture size of level %d: %d\n", i, size_in_bytes);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_INTERNAL_FORMAT, &size_in_bytes);
+		printf("Format %d (%d)\n",size_in_bytes,internalformat);
+	}
+
+}
+
 void manuModel::initTexture( texture *inTexture )
 {
 	glBindTexture(GL_TEXTURE_2D, inTexture->id );
@@ -814,8 +830,10 @@ void manuModel::initTexture( texture *inTexture )
 	if(textureFormat == COLOR) {
 		if(glewIsSupported("GL_EXT_texture_compression_s3tc")) {
 			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
-						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
+			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+			
+			loadMipped(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h, inTexture->ima);	
 		
 			GLint errval = glGetError();
 			if(errval) {
@@ -828,17 +846,7 @@ void manuModel::initTexture( texture *inTexture )
 			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
 			
-			gluBuild2DMipmaps(GL_TEXTURE_2D, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
-						GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
-			errtest(__FILE__,__LINE__,__FUNCTION__);
-			GLint size_in_bytes;
-			for(int i = 0; i <= 11; i++) {
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size_in_bytes);
-				errtest(__FILE__,__LINE__,__FUNCTION__);
-				printf("Compressed texture size of level %d: %d\n", i, size_in_bytes);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_INTERNAL_FORMAT, &size_in_bytes);
-				printf("Format %d (%d)\n",size_in_bytes,GL_COMPRESSED_RGB_ARB);
-			}
+			loadMipped(GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h, inTexture->ima);	
 			
 			// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 3 );
 		}
