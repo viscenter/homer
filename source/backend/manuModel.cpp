@@ -25,11 +25,6 @@
 GLint TEXW;
 GLint TEXH;
 
-#ifdef __WIN32__
-PFNGLGETCOMPRESSEDTEXIMAGEPROC glGetCompressedTexImageEXT;
-PFNGLCOMPRESSEDTEXIMAGE2DARBPROC glCompressedTexImage2DEXT;
-#endif
-
 void errtest(const char * file, const int line, const char * fun)
 {
 	char * nodir = strrchr(file,'/')+1;
@@ -402,7 +397,6 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 
 void saveCompressed(int i, int j) {
 	GLint size_in_bytes;
-	//glGetCompressedTexImageEXT = (PFNGLGETCOMPRESSEDTEXIMAGEPROC)wglGetProcAddress("glGetCompressedTexImageARB");
 
 	//if(!glGetCompressedTexImageEXT) {
 	//	printf("No compressed tex image fetch!\n");
@@ -581,8 +575,6 @@ void manuModel::readTextureSplit2(pixel *colorIma)
 
 void manuModel::readCachedMipmap(void)
 {
-	//glCompressedTexImage2DEXT = (PFNGLCOMPRESSEDTEXIMAGE2DARBPROC)wglGetProcAddress("glCompressedTexImage2DARB");
-
 	int size_in_bytes = 8388608;
 	int level = 0;
 	// int size_in_bytes = 131072;
