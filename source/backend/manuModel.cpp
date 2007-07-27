@@ -67,7 +67,7 @@ manuModel::~manuModel()
 	
 	texture *next = firstTexture->nextTexture;
 	delete[] firstTexture->ima;
-	// glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
+	glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
 	// delete firstTexture->subIma;
 	delete firstTexture;
 	while( next != NULL )
@@ -75,7 +75,7 @@ manuModel::~manuModel()
 		currentTexture = next;
 		next = currentTexture->nextTexture;
 		delete[] currentTexture->ima;
-		// glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
+		glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
 		// delete currentTexture->subIma;
 		delete currentTexture;
 	}
