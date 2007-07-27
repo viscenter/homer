@@ -1,9 +1,7 @@
 #include <new>
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+#include <GL/glew.h>
 #include <GLUT/glut.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glext.h>
 #else
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -841,7 +839,6 @@ manuModel::replaceTexture(char *filename)
 
 void manuModel::initTexture( texture *inTexture )
 {
-	glGenTextures(1, (GLuint*)(&(inTexture->id)));
 	glBindTexture(GL_TEXTURE_2D, inTexture->id );
 	errtest(__FILE__,__LINE__,__FUNCTION__);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
@@ -853,8 +850,8 @@ void manuModel::initTexture( texture *inTexture )
 	if(textureFormat == COLOR) {
 		if(glewIsSupported("GL_EXT_texture_compression_s3tc")) {
 			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
-			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
-			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
+						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
 		
 			GLint errval = glGetError();
 			if(errval) {
