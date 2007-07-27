@@ -37,10 +37,10 @@ float flattening = 0;
 GLUI *glui;
 GLUI_Listbox *fileBox;
 GLUI_Translation *trans_z;
-GLUI_Button *reloadButton;
+GLUI_Button *reloadButton, *prevButton, *nextButton;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
 
 deque<string> fileNames;
 
@@ -216,7 +216,7 @@ void InitFromFileNames(int pos) {
 	string selected_file, corresponding_image;
 	string directory = "venetus/";
 
-	selected_file = fileNames[fileBox->get_int_val()];
+	selected_file = fileNames[pos];
 	corresponding_image = selected_file;
 	corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg");
 	// printf( "%s\n", selected_file.c_str() );
@@ -230,6 +230,12 @@ void DisableGLUIandInit(void)
 	InitFromFileNames(fileBox->get_int_val());
 	glui->enable();
 	reloadButton->disable();
+	if(fileBox->get_int_val() == 0) {
+		prevButton->disable();
+	}
+	if((fileBox->get_int_val() + 1) ==  fileNames.size()) {
+		nextButton->disable();
+	}
 }
 
 void control_cb(int control)
@@ -241,6 +247,20 @@ void control_cb(int control)
 			break;
 		case SPRINGS_ID:
 			ToggleVerticesAndSprings();
+			break;
+		case PREV_ID:
+			nextButton->enable();
+			fileBox->set_int_val(fileBox->get_int_val()-1);
+			
+			DeleteSystem();
+			DisableGLUIandInit();
+			break;
+		case NEXT_ID:
+			prevButton->enable();
+			fileBox->set_int_val(fileBox->get_int_val()+1);
+			
+			DeleteSystem();
+			DisableGLUIandInit();
 			break;
 		case FLATTENING_ID:
 			reloadButton->enable();
@@ -320,8 +340,14 @@ void setup_glui(void)
 	// fileBox->add_item(0, "default"); 
   glui->add_statictext( "" );
 
+  prevButton = glui->add_button( "Previous" , PREV_ID, control_cb);
+	prevButton->disable();
+ 
+  nextButton = glui->add_button( "Next" , NEXT_ID, control_cb);
 
-  //*****Control spheres for rotation, translation, and zoom controls********
+  glui->add_statictext( "" );
+	
+	//*****Control spheres for rotation, translation, and zoom controls********
  
   GLUI_Rotation *view_rot = glui->add_rotation( "Rotate", view_rotate );
   view_rot->set_spin( 1.0 );
