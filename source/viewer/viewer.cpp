@@ -25,8 +25,6 @@ using namespace std;
 
 #define DETACHED_CONTROLS 0
 
-extern int isExtensionSupported(const char *extension);
-
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
 // float view_rotate[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
@@ -276,7 +274,7 @@ void control_cb(int control)
 void MyReshapeCanvas( int width, int height )
 {
 	int tx, ty, tw, th;
-	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS || glewIsSupported("GL_CR_state_parameter") ) {
 		xy_aspect = (float)width / (float)height;
 	}
 	else {
@@ -301,7 +299,7 @@ void MyGlutIdle( void )
 
 void setup_glui(void)
 {
-	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS || glewIsSupported("GL_CR_state_parameter") ) {
 		glui = GLUI_Master.create_glui( "Controls" );
 		glutReshapeFunc( MyReshapeCanvas );
 	}
