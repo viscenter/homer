@@ -395,17 +395,19 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	return 0;
 }
 
-void saveCompressed(int i, int j) {
+void saveCompressed(char * infilename, int i, int j) {
 	GLint size_in_bytes;
 
 	//if(!glGetCompressedTexImageEXT) {
 	//	printf("No compressed tex image fetch!\n");
 	//}
 
+	infilename += strlen("venetus/");
+
 	char filename[256];
 	// save out the compressed mipmapped images
 	for(int level = 0; level < 5; level++) {
-		sprintf(filename,"image-%d-%d-%d.cmp",i,j,level);
+		sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename,i,j,level);
 			
 				
 		if(glewIsSupported("GL_ARB_texture_compression")) {
@@ -415,50 +417,18 @@ void saveCompressed(int i, int j) {
 			printf("%d: Saving %d bytes to %s\n",level,size_in_bytes,filename);
 			
 			glGetCompressedTexImageARB(GL_TEXTURE_2D, level, curimg);
-		
+			errtest(__FILE__,__LINE__,__FUNCTION__);
+
 			FILE * outfile = fopen(filename,"w");
 			fwrite(curimg,1,size_in_bytes,outfile);
 			fclose(outfile);
 			
 			free(curimg);
 		}
-	
-		/*	
-		int errval = glGetError();
-		if(errval == GL_NO_ERROR) {
-			printf("GL_NO_ERROR\n");
-		}
-		else if(errval == GL_INVALID_ENUM) {
-			printf("GL_INVALID_ENUM\n");
-		}
-		else if(errval == GL_INVALID_VALUE) {
-			printf("GL_INVALID_VALUE\n");
-		}
-		else if(errval == GL_INVALID_OPERATION) {
-			printf("GL_INVALID_OPERATION\n");
-		}
-		else if(errval == GL_STACK_OVERFLOW) {
-			printf("GL_STACK_OVERFLOW\n");
-		}
-		else if(errval == GL_STACK_UNDERFLOW) {
-			printf("GL_STACK_UNDERFLOW\n");
-		}
-		else if(errval == GL_OUT_OF_MEMORY) {
-			printf("GL_OUT_OF_MEMORY\n");
-		}
-		else if(errval == GL_TABLE_TOO_LARGE) {
-			printf("GL_TABLE_TOO_LARGE\n");
-		}
-		else {
-			printf("THIS SHOULDN'T HAPPEN\n");
-		}
-		*/
-
-		
 	}
 }
 
-void manuModel::readTextureSplit(pixel *colorIma)
+void manuModel::readTextureSplit(pixel *colorIma, char * filename)
 {
 	// pixel *colorIma;
 	
@@ -521,7 +491,7 @@ void manuModel::readTextureSplit(pixel *colorIma)
 					textureFormat = COLOR;
 					initTexture( currentTexture );
 					glBindTexture(GL_TEXTURE_2D, currentTexture->id );
-					//saveCompressed(i,j);
+					saveCompressed(filename,i,j);
 					
 				}
 			}
@@ -573,12 +543,12 @@ void manuModel::readTextureSplit2(pixel *colorIma)
 }
 */
 
-void manuModel::readCachedMipmap(void)
+void manuModel::readCachedMipmap(char * infilename)
 {
-	int size_in_bytes = 8388608;
-	int level = 0;
-	// int size_in_bytes = 131072;
-	// int level = 3;
+	//int size_in_bytes = 8388608;
+	//int level = 0;
+	int size_in_bytes = 131072;
+	int level = 3;
 	char filename[256];
 	border = 512;
 
@@ -597,7 +567,7 @@ void manuModel::readCachedMipmap(void)
 
 	for(int i = 0; i < tileH; i++) {
 		for(int j = 0; j < tileW; j++) {
-			sprintf(filename,"image-%d-%d-%d.cmp",i,j,level);
+			sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename+strlen("venetus/"),i,j,level);
 			printf("Reading cached mipmap from %s\n",filename);
 
 			if( firstTexture == NULL )
@@ -638,8 +608,11 @@ void manuModel::readCachedMipmap(void)
 			//glTexImage2D(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_ARB, TEXW, TEXH,
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, data );
 
-			//glCompressedTexImage2DEXT(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,4096,4096,0,size_in_bytes,data);
-			// glCompressedTexImage2DEXT(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
+			if(glewIsSupported("GL_ARB_texture_compression")) {
+			// glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,4096,4096,0,size_in_bytes,data);
+			printf("Reading as format %d\n",GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+			glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
+			}
 			GLint errval = glGetError();
 			if(errval) {
 				printf("Error: %s\n",gluErrorString(errval));
@@ -657,17 +630,20 @@ void manuModel::readTexture(char *filename)
 
  //	int imaW, imaH;
  pixel *colorIma;
+
+ char testfile[256];
+ sprintf(testfile,"venetus/cache/%s-0-0-0.cmp",filename + strlen("venetus/"));
 	
  textureFile = filename;
  if(strcmp(filename+(strlen(filename)-strlen("-hi.jpg")),"-hi.jpg") == 0) {
 	 printf("Hi res file\n");
-	 if(access("image-0-0-0.cmp",R_OK) == 0) {
+	 if(access(testfile,R_OK) == 0) {
 		 printf("Using cached mipmap\n");
-		 readCachedMipmap();
+		 readCachedMipmap(filename);
 	 }
 	 else {
 		 readImage( filename, colorIma, imaW, imaH );
-		 readTextureSplit(colorIma);
+		 readTextureSplit(colorIma,filename);
 		}
  }
  else {
@@ -753,7 +729,7 @@ void manuModel::readTexture(char *filename)
 	 }
 	 else{
 		if( (imaH > TEXH) || (imaW > TEXW) ) {
-			readTextureSplit(colorIma);
+			readTextureSplit(colorIma,filename);
 		}	
 		else if( colorIma != NULL ){
 			firstTexture = new texture;

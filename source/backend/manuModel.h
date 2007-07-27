@@ -96,8 +96,8 @@ class manuModel
 		~manuModel();
 		bool readMesh(char *filename);
 		void readTexture(char *filename);
-		void readTextureSplit(pixel *colorIma);
-		void readCachedMipmap(void);
+		void readTextureSplit(pixel *colorIma, char * filename);
+		void readCachedMipmap(char * infilename);
 		
 		void replaceTexture(char *filename);
 		void initTexture( texture *inTexture );
