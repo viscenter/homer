@@ -3,8 +3,7 @@
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
 #else
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <GL/glew.h>
 #include <GL/glut.h>
 #endif
 #include <cstdio>
@@ -392,7 +391,12 @@ int main( int argc, char** argv )
 
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | /*GLUT_ALPHA |*/ GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
-	
+	GLenum err = glewInit();
+	if(GLEW_OK != err) {
+		fprintf(stderr,"Error: %s\n", glewGetErrorString(err));
+		exit(1);
+	}
+
 	glutDisplayFunc( Display );
 
 	setup_glui();
