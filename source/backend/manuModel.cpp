@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <GLUT/glut.h>
 #else
-#include <GL/glew.h>
+#include "GLee.h"
 #include <GL/glut.h>
 #endif
 #include <math.h>
@@ -67,6 +67,7 @@ manuModel::~manuModel()
 	
 	texture *next = firstTexture->nextTexture;
 	delete[] firstTexture->ima;
+	// glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
 	// delete firstTexture->subIma;
 	delete firstTexture;
 	while( next != NULL )
@@ -74,6 +75,7 @@ manuModel::~manuModel()
 		currentTexture = next;
 		next = currentTexture->nextTexture;
 		delete[] currentTexture->ima;
+		// glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
 		// delete currentTexture->subIma;
 		delete currentTexture;
 	}
@@ -406,17 +408,18 @@ void saveCompressed(char * infilename, int i, int j) {
 
 	char filename[256];
 	// save out the compressed mipmapped images
-	for(int level = 0; level < 5; level++) {
+	for(int level = 0; level < 1; level++) {
 		sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename,i,j,level);
 			
 				
-		if(glewIsSupported("GL_ARB_texture_compression")) {
+		if(GLEE_ARB_texture_compression) {
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE_ARB, &size_in_bytes);
 			GLvoid * curimg = (GLvoid *)malloc(size_in_bytes);
 		
 			printf("%d: Saving %d bytes to %s\n",level,size_in_bytes,filename);
 			
 			glGetCompressedTexImageARB(GL_TEXTURE_2D, level, curimg);
+			glCompressedTexImage2DARB(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, 4096, 4096, 0, size_in_bytes, curimg);
 			errtest(__FILE__,__LINE__,__FUNCTION__);
 
 			FILE * outfile = fopen(filename,"w");
@@ -467,7 +470,8 @@ void manuModel::readTextureSplit(pixel *colorIma, char * filename)
 						currentTexture = newTexture;
 					}
 					currentTexture->nextTexture = NULL;
-					currentTexture->id = textureID++;
+					glGenTextures(1,&textureID);
+					currentTexture->id = textureID;
 				
 					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
 					for(int h = (i*border_h); (h < (i*border_h+TEXH)) && (h < imaH); h++) {
@@ -490,7 +494,6 @@ void manuModel::readTextureSplit(pixel *colorIma, char * filename)
 					currentTexture->hh = imaH;
 					textureFormat = COLOR;
 					initTexture( currentTexture );
-					glBindTexture(GL_TEXTURE_2D, currentTexture->id );
 					saveCompressed(filename,i,j);
 					
 				}
@@ -545,10 +548,10 @@ void manuModel::readTextureSplit2(pixel *colorIma)
 
 void manuModel::readCachedMipmap(char * infilename)
 {
-	//int size_in_bytes = 8388608;
-	//int level = 0;
-	int size_in_bytes = 131072;
-	int level = 3;
+	int size_in_bytes = 8388608;
+	int level = 0;
+	//int size_in_bytes = 131072;
+	//int level = 3;
 	char filename[256];
 	border = 512;
 
@@ -582,7 +585,8 @@ void manuModel::readCachedMipmap(char * infilename)
 				currentTexture = newTexture;
 			}
 			currentTexture->nextTexture = NULL;
-			currentTexture->id = textureID++;
+			glGenTextures(1,&textureID);
+			currentTexture->id = textureID;
 		
 			currentTexture->ima = new pixel[ 1 ];
 			
@@ -596,6 +600,9 @@ void manuModel::readCachedMipmap(char * infilename)
 			// load in the file
 			GLvoid * data = malloc(size_in_bytes);
 			FILE * infile = fopen(filename,"r");
+			if(!infile) {
+				printf("ERROR OPENING FILE\n");
+			}
 			fread(data,1,size_in_bytes,infile);
 			fclose(infile);
 
@@ -608,10 +615,10 @@ void manuModel::readCachedMipmap(char * infilename)
 			//glTexImage2D(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_ARB, TEXW, TEXH,
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, data );
 
-			if(glewIsSupported("GL_ARB_texture_compression")) {
-			// glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,4096,4096,0,size_in_bytes,data);
+			if(GLEE_ARB_texture_compression) {
+				glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,4096,4096,0,size_in_bytes,data);
 			printf("Reading as format %d\n",GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
-			glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
+			// glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
 			}
 			GLint errval = glGetError();
 			if(errval) {
@@ -735,6 +742,7 @@ void manuModel::readTexture(char *filename)
 			firstTexture = new texture;
 			currentTexture = firstTexture;
 			currentTexture->nextTexture = NULL;
+			glGenTextures(1,&textureID);
 			currentTexture->id = textureID;
 				currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
 			for( int h = 0; h < imaH; h++ ){
@@ -779,11 +787,18 @@ manuModel::replaceTexture(char *filename)
 
 void loadMipped(GLenum internalformat, int w, int h, void * data)
 {
-	gluBuild2DMipmaps(GL_TEXTURE_2D, internalformat, w, h,
-						GL_RGB, GL_UNSIGNED_BYTE, data );
+	// glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internalformat, w, h,
+						0, GL_RGB, GL_UNSIGNED_BYTE, data );
+
+	//gluBuild2DMipmaps(GL_TEXTURE_2D, internalformat, w, h,
+	//					GL_RGB, GL_UNSIGNED_BYTE, data );
 	errtest(__FILE__,__LINE__,__FUNCTION__);
 	GLint size_in_bytes;
-	for(int i = 0; i <= 11; i++) {
+	for(int i = 0; i <= 0; i++) {
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_ARB, &size_in_bytes);
+		printf("COMPRESSED? %d\n",size_in_bytes);
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size_in_bytes);
 		errtest(__FILE__,__LINE__,__FUNCTION__);
 		printf("Compressed texture size of level %d: %d\n", i, size_in_bytes);
@@ -804,7 +819,8 @@ void manuModel::initTexture( texture *inTexture )
 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	
 	if(textureFormat == COLOR) {
-		if(glewIsSupported("GL_EXT_texture_compression_s3tc")) {
+		/*
+		if(glexExtensionsSupported("GL_EXT_texture_compression_s3tc")) {
 			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
 			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
@@ -817,7 +833,8 @@ void manuModel::initTexture( texture *inTexture )
 			}
 		}
 		else
-		if(glewIsSupported("GL_ARB_texture_compression")) {
+		*/
+		if(GLEE_ARB_texture_compression) {
 			if( SMT_DEBUG ) printf("Using generic ARB texture compression\n"); 
 			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );

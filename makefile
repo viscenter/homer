@@ -26,7 +26,7 @@ LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstd
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
 CFLAGS	+=	-O3
-# CFLAGS  += -DUSE_DISPLAY_LISTS 
+CFLAGS  += -DUSE_DISPLAY_LISTS 
 
 # Linux-specific flags
 ifneq (,$(findstring Linux,$(UNAME)))	
@@ -44,7 +44,7 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	VIEWEROUT	:= viewer.exe
 	LIBS  :=	 -L/c/Program\ Files/OpenCV/lib
 	LIBS	+=	-lhighgui -lcv -lcxcore -lglui -lglut32 -lopengl32 -lglu32 -lstdc++
-	CFLAGS	+=	-D_WIN32 -DGLEW_STATIC -D_STDCALL_SUPPORTED -D_M_IX86	
+	CFLAGS	+=	-DWIN32 -D_STDCALL_SUPPORTED -D_M_IX86	
 	CFLAGS  +=	-I/c/Program\ Files/OpenCV/cv/include -I/c/Program\ Files/OpenCV/cxcore/include \
 							-I/c/Program\ Files/OpenCV/otherlibs/highgui
 	JAVAGL	:=	smt.exe
@@ -55,7 +55,7 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 	VIEWEROUT	:= viewer.exe
 	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lglui -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	+=	-D_WIN32 -DGLEW_STATIC -I/usr/include/opencv -I/usr/include/boost-1_33_1
+	CFLAGS	+=	-DWIN32 -I/usr/include/opencv -I/usr/include/boost-1_33_1
 	# CFLAGS += -mno-cygwin
 	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
@@ -86,7 +86,7 @@ endif
 
 BUILD	:=	build
 
-BACKENDSOURCES	:=	source/backend source/glew
+BACKENDSOURCES	:=	source/backend source/glee
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava

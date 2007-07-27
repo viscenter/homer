@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <GLUT/glut.h>
 #else
-#include <GL/glew.h>
+#include "GLee.h"
 #include <GL/glut.h>
 #endif
 #include <cstdio>
@@ -294,7 +294,7 @@ void control_cb(int control)
 void MyReshapeCanvas( int width, int height )
 {
 	int tx, ty, tw, th;
-	if( DETACHED_CONTROLS || glewIsSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS /*|| glexExtensionsSupported("GL_CR_state_parameter") */) {
 		xy_aspect = (float)width / (float)height;
 	}
 	else {
@@ -319,7 +319,7 @@ void MyGlutIdle( void )
 
 void setup_glui(void)
 {
-	if( DETACHED_CONTROLS || glewIsSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS /*|| glexExtensionsSupported("GL_CR_state_parameter")*/ ) {
 		glui = GLUI_Master.create_glui( "Controls" );
 		glutReshapeFunc( MyReshapeCanvas );
 	}
@@ -412,11 +412,13 @@ int main( int argc, char** argv )
 
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | /*GLUT_ALPHA |*/ GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
+	/*
 	GLenum err = glewInit();
 	if(GLEW_OK != err) {
 		fprintf(stderr,"Error: %s\n", glewGetErrorString(err));
 		exit(1);
 	}
+	*/
 
 	glutDisplayFunc( Display );
 
