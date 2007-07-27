@@ -15,6 +15,8 @@
 #include <dirent.h>
 #include <deque>
 
+#include <algorithm>
+
 #include <iostream>
 #include <string>
 using namespace std;
@@ -36,11 +38,12 @@ float flattening = 0;
 
 GLUI *glui;
 GLUI_Listbox *fileBox;
+GLUI_EditText *searchBox;
 GLUI_Translation *trans_z;
 GLUI_Button *reloadButton, *prevButton, *nextButton;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, SEARCH_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
 
 deque<string> fileNames;
 
@@ -248,6 +251,18 @@ void control_cb(int control)
 		case SPRINGS_ID:
 			ToggleVerticesAndSprings();
 			break;
+		case SEARCH_ID:
+			for(unsigned int i = 0; i < fileNames.size(); i++) {
+				if(fileNames[i].find(string(searchBox->get_text()),0) != string::npos) {
+					searchBox->set_text( "" );
+					fileBox->set_int_val(i);
+					printf("Found %d\n",i);
+					DeleteSystem();
+					DisableGLUIandInit();
+					break;
+				}
+			}
+			break;
 		case PREV_ID:
 			nextButton->enable();
 			fileBox->set_int_val(fileBox->get_int_val()-1);
@@ -338,7 +353,11 @@ void setup_glui(void)
 		fileBox->add_item( i, (char*)fileNames[i].c_str() );
   }
 	// fileBox->add_item(0, "default"); 
-  glui->add_statictext( "" );
+
+	searchBox = glui->add_edittext( "Search: ", GLUI_EDITTEXT_TEXT, NULL, SEARCH_ID, control_cb);
+	searchBox->set_w(175);
+  
+	glui->add_statictext( "" );
 
   prevButton = glui->add_button( "Previous" , PREV_ID, control_cb);
 	prevButton->disable();
