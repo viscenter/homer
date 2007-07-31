@@ -106,131 +106,140 @@ bool manuModel::readMesh(char *filename)
 {	
 	meshFile=filename; 
 	FILE* fp = MBopenFile(filename, "r");
-	if( YL_UseQuad )
-	{
-		//
-		// Read in all the comments (lines that begin with a "#")
-		//
-		char buffer[256];  
-		while(true)
+	char * extension = filename+(strlen(filename)-strlen(".obj"));
+	// printf("Extension: %s\n",extension);
+	if( strcmp(extension,".obj") == 0 ) { // loading an OBJ file
+		fclose(fp);
+		readOBJ(filename);	
+	}
+	else {
+		if( YL_UseQuad )
 		{
-			fgets(buffer, 255, fp );
-			if (buffer[0] != '#') break;
-		}
-		
-		// Read in number of X and Y samples!
-		sscanf(buffer, "%i %i \n", &xSamples, &ySamples );
-		nVer = xSamples * ySamples;
-		
-		// Read in the points
-		verList = new Point[ nVer ];
-		originalList = new Point[ nVer ];
-		for(int i=0; i < nVer; i++)
-		{
-			float x, y, z, u, v;
-			int idx;
-			
-			fgets(buffer, 255, fp );
-			sscanf(buffer, "%i %f %f %f %f %f \n", &idx, &x, &y, &z, &u, &v ); 
-			verList[idx].x = x;
-			verList[idx].y = y;
-			verList[idx].z = z;
-			verList[idx].u1 =  u;
-			verList[idx].v1 =  v;
-			
-			//			verList[idx].v1 = imaH -  v;
-			originalList[idx].u1 = (float) u;
-			originalList[idx].v1 = (float) v;
-		}
-		
-		// Adds quadList for self-collision
-		fgets(buffer, 255, fp );
-		if (buffer[0] == 'Q')
-		{
-			char token[10];
-			sscanf(buffer, "%s %i \n", token, &nQuad);
-			quadList = new Quad[nQuad];
-			for (int i = 0; i< nQuad; i++)
+			//
+			// Read in all the comments (lines that begin with a "#")
+			//
+			char buffer[256];  
+			while(true)
 			{
-				int idx1, idx2, idx3, idx4;
 				fgets(buffer, 255, fp );
-				sscanf(buffer, "%i %i %i %i\n", &idx1, &idx2, &idx3, &idx4 ); 
-				quadList[i].v1 = idx1-1;
-				quadList[i].v2 = idx2-1;
-				quadList[i].v3 = idx3-1;
-				quadList[i].v4 = idx4-1;
-			}
-		
-		}
-		
-		if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
-		fclose(fp);
-	}
-	else
-	{
-		//
-		// Read in all the comments (lines that begin with a "#")
-		//
-		char buffer[256], token[10]; 
-		while(true)
-		{
-			fgets(buffer, 255, fp );
-			if (buffer[0] != '#') break;
-		}
-		
-		if (buffer[0] != 'V')
-		{
-			if( SMT_DEBUG ) fprintf(stderr, "The mesh file %s is not correct.\n", filename);
-			return false;
-		}
-		else sscanf(buffer, "%s %i \n", token, &nVer);
-		
-		verList = new Point[nVer];
-		originalList = new Point[nVer];
-		for(int i=0; i < nVer; i++)
-		{
-			float x, y, z, u, v, w;
-			
-			fgets(buffer, 255, fp );
-			if( YL_UseTriangularTextureMap ){
-				sscanf(buffer, "%f %f %f\n", &x, &y, &z);
-				verList[i].u1 = 0.0;
-				verList[i].v1 = 0.0;
-			}
-			else{
-				sscanf(buffer, "%f %f %f %f %f\n", &x, &y, &z, &u, &v);
-				verList[i].u1 = u;
-				verList[i].v1 = v;
+				if (buffer[0] != '#') break;
 			}
 			
-			verList[i].x = x;
-			verList[i].y = y;
-			verList[i].z = z;
+			// Read in number of X and Y samples!
+			sscanf(buffer, "%i %i \n", &xSamples, &ySamples );
+			nVer = xSamples * ySamples;
 			
-		}
-		if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
-		
-		fgets(buffer, 255, fp );
-		if (buffer[0] != 'T')
-		{
-			if( SMT_DEBUG ) fprintf(stderr, "The mesh file %s is not correct.\n", filename);
-			return false;
-		}
-		else sscanf(buffer, "%s %i \n", token, &nTrig);
-		trigList = new Triangle[nTrig];
-		for (int i = 0; i< nTrig; i++)
-		{
-			int idx1, idx2, idx3;
+			// Read in the points
+			verList = new Point[ nVer ];
+			originalList = new Point[ nVer ];
+			for(int i=0; i < nVer; i++)
+			{
+				float x, y, z, u, v;
+				int idx;
+				
+				fgets(buffer, 255, fp );
+				sscanf(buffer, "%i %f %f %f %f %f \n", &idx, &x, &y, &z, &u, &v ); 
+				verList[idx].x = x;
+				verList[idx].y = y;
+				verList[idx].z = z;
+				verList[idx].u1 =  u;
+				verList[idx].v1 =  v;
+				
+				//			verList[idx].v1 = imaH -  v;
+				originalList[idx].u1 = (float) u;
+				originalList[idx].v1 = (float) v;
+			}
+			
+			// Adds quadList for self-collision
 			fgets(buffer, 255, fp );
-			sscanf(buffer, "%i %i %i\n", &idx1, &idx2, &idx3); 
-			trigList[i].idx1 = idx1-1;
-			trigList[i].idx2 = idx2-1;
-			trigList[i].idx3 = idx3-1;
+			if (buffer[0] == 'Q')
+			{
+				char token[10];
+				sscanf(buffer, "%s %i \n", token, &nQuad);
+				quadList = new Quad[nQuad];
+				for (int i = 0; i< nQuad; i++)
+				{
+					int idx1, idx2, idx3, idx4;
+					fgets(buffer, 255, fp );
+					sscanf(buffer, "%i %i %i %i\n", &idx1, &idx2, &idx3, &idx4 ); 
+					quadList[i].v1 = idx1-1;
+					quadList[i].v2 = idx2-1;
+					quadList[i].v3 = idx3-1;
+					quadList[i].v4 = idx4-1;
+				}
+			
+			}
+			
+			if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
+			fclose(fp);
 		}
-		
-		if( SMT_DEBUG ) printf("Read in %i Triangles \n", nTrig );
-		fclose(fp);
-	}
+		else
+		{
+			//
+			// Read in all the comments (lines that begin with a "#")
+			//
+			char buffer[256], token[10]; 
+			while(true)
+			{
+				fgets(buffer, 255, fp );
+				if (buffer[0] != '#') break;
+			}
+			
+			if (buffer[0] != 'V')
+			{
+				if( SMT_DEBUG ) fprintf(stderr, "The mesh file %s is not correct.\n", filename);
+				return false;
+			}
+			else sscanf(buffer, "%s %i \n", token, &nVer);
+			
+			verList = new Point[nVer];
+			originalList = new Point[nVer];
+			for(int i=0; i < nVer; i++)
+			{
+				float x, y, z, u, v, w;
+				
+				fgets(buffer, 255, fp );
+				if( YL_UseTriangularTextureMap ){
+					sscanf(buffer, "%f %f %f\n", &x, &y, &z);
+					verList[i].u1 = 0.0;
+					verList[i].v1 = 0.0;
+				}
+				else{
+					sscanf(buffer, "%f %f %f %f %f\n", &x, &y, &z, &u, &v);
+					verList[i].u1 = u;
+					verList[i].v1 = v;
+				}
+				
+				verList[i].x = x;
+				verList[i].y = y;
+				verList[i].z = z;
+				
+			}
+			if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
+			
+			fgets(buffer, 255, fp );
+			if (buffer[0] != 'T')
+			{
+				if( SMT_DEBUG ) fprintf(stderr, "The mesh file %s is not correct.\n", filename);
+				return false;
+			}
+			else sscanf(buffer, "%s %i \n", token, &nTrig);
+			trigList = new Triangle[nTrig];
+			for (int i = 0; i< nTrig; i++)
+			{
+				int idx1, idx2, idx3;
+				fgets(buffer, 255, fp );
+				sscanf(buffer, "%i %i %i\n", &idx1, &idx2, &idx3); 
+				trigList[i].idx1 = idx1-1;
+				trigList[i].idx2 = idx2-1;
+				trigList[i].idx3 = idx3-1;
+			}
+			
+			if( SMT_DEBUG ) printf("Read in %i Triangles \n", nTrig );
+			fclose(fp);
+		}
+	} // end surf file reading
+
 	//
 	// !Translate points to the geometric center!
 	// !Scale the points to fit in unit sphere!

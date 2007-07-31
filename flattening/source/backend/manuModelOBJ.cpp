@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cstdio>
 
+#include "manuModel.h"
 #include "MathDefs.h"
 
 #define BUF_SIZE 256
@@ -16,11 +17,12 @@ class VertexGroup {
 		std::string texName;
 };
 
-int readOBJ( char * filename )
+bool manuModel::readOBJ( char * filename )
 {
 	std::vector<tVector> vertices;
 	std::vector<tVector> textureoffsets;
 	std::vector<VertexGroup> groups;
+	std::vector<Triangle> trigroups;
 	std::streampos rewind;
 
 	std::ifstream objfile(filename);
@@ -28,7 +30,7 @@ int readOBJ( char * filename )
 
 	if(!objfile.good()) {
 		fprintf(stderr, "Unable to open OBJ file.\n");
-		exit(1);
+		return false;
 	}
 
 	// Read in all vertices
@@ -68,6 +70,24 @@ int readOBJ( char * filename )
 		}
 	}	
 	
+	// We now have vertices and texture offsets, copy them
+	// into the manuModel data structure
+	nVer = vertices.size();
+	verList = new Point[nVer];
+	originalList = new Point[nVer];
+	for(int i=0; i < nVer; i++)
+	{
+		verList[i].u1 = textureoffsets[i].u;
+		verList[i].v1 = textureoffsets[i].v;
+		
+		verList[i].x = vertices[i].x;
+		verList[i].y = vertices[i].y;
+		verList[i].z = vertices[i].z;
+	}
+	if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
+		
+	
+
 	objfile.clear();
 	objfile.seekg(rewind);
 	
@@ -97,10 +117,18 @@ int readOBJ( char * filename )
 				if((line[0] == 'f') && (line[1] == ' ')) {
 					int v1,t1,v2,t2,v3,t3;
 					sscanf(line.c_str(),"f %d/%d %d/%d %d/%d",&v1,&t1,&v2,&t2,&v3,&t3);
+
+					Triangle thistri;
+					thistri.idx1 = v1-1;
+					thistri.idx2 = v2-1;
+					thistri.idx3 = v3-1;
+					trigroups.push_back(thistri);
+
 					// printf("f %d/%d %d/%d %d/%d\n",v1,t1,v2,t2,v3,t3);
 					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v1-1]),&(textureoffsets[t1-1])));
 					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v2-1]),&(textureoffsets[t2-1])));
 					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v3-1]),&(textureoffsets[t3-1])));
+					
 					/*
 					printf("%f,%f,%f\t%f,%f\n",
 							thisgroup.vertices.back().first.x,
@@ -120,10 +148,19 @@ int readOBJ( char * filename )
 		}
 	}
 
+	nTrig = trigroups.size();
+	trigList = new Triangle[nTrig];
+
+	for(unsigned int i = 0; i < nTrig; i++) {
+		trigList[i] = trigroups[i];
+	}
+	if( SMT_DEBUG ) printf("Read in %i Triangles \n", nTrig );
+
+	/*
 	for(unsigned int i = 0; i < groups.size(); i++) {
-		printf("Group name: %s\n",groups[i].groupName.c_str());
+				printf("Group name: %s\n",groups[i].groupName.c_str());
 		printf("Texture name: %s\n",groups[i].texName.c_str());
-		for(unsigned int j = 0; j < groups[i].vertices.size(); j++) {
+		for(unsigned int j = 0; j < (groups[i].vertices.size() / 3); j++) {
 			printf("%f,%f,%f\t%f,%f\n",
 							groups[i].vertices[j].first->x,
 							groups[i].vertices[j].first->y,
@@ -132,6 +169,7 @@ int readOBJ( char * filename )
 							groups[i].vertices[j].second->v);
 		}
 	}
+	*/
 
-	return 0;
+	return true;
 }
