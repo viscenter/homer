@@ -199,11 +199,11 @@ void getFileNames()
 	while(pent=readdir(pdir)) {
 		string file = pent->d_name;
 		if(file[0] != '.') {
-			if(file.compare(file.length()-5,5,".surf") == 0) {
-				if(file.compare(file.length()-8,3,"-lo") == 0) {
+			if((file.compare(file.length()-5,5,".surf") == 0) || (file.compare(file.length()-4,4,".obj") == 0)) {
+				if((file.compare(file.length()-8,3,"-lo") == 0) || (file.compare(file.length()-7,3,"-lo") == 0)) {
 					fileNames.push_front(file);
 				}
-				else if((file.compare(file.length()-8,3,"-hi") == 0) && (texsize > 2048)) {
+				else if((texsize > 2048) && ((file.compare(file.length()-8,3,"-hi") == 0) || (file.compare(file.length()-7,3,"-hi") == 0))) {
 					fileNames.push_back(file);
 				}
 			}
