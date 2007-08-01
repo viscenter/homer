@@ -45,7 +45,7 @@ bool manuModel::readOBJ( char * filename )
 			linereader >> ignore >> thispoint.x >> thispoint.y >> thispoint.z;
 			vertices.push_back(thispoint);
 		}
-		else if(line[0] != '#') {
+		else if((line[0] != '#') && (line[0] != 'g')) {
 			break;
 		}
 	}
@@ -63,6 +63,8 @@ bool manuModel::readOBJ( char * filename )
 			std::stringstream linereader;
 			linereader << line;
 			linereader >> ignore >> thisoffset.u >> thisoffset.v;
+			// thisoffset.u = 1.0 - thisoffset.u;
+			thisoffset.v = 1.0 - thisoffset.v;
 			textureoffsets.push_back(thisoffset);
 		}
 		else if(line[0] != '#') {
@@ -81,13 +83,11 @@ bool manuModel::readOBJ( char * filename )
 		verList[i].v1 = textureoffsets[i].v;
 		
 		verList[i].x = vertices[i].x;
-		verList[i].y = vertices[i].y;
-		verList[i].z = vertices[i].z;
+		verList[i].y = vertices[i].z;
+		verList[i].z = vertices[i].y;
 	}
 	if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
 		
-	
-
 	objfile.clear();
 	objfile.seekg(rewind);
 	
@@ -98,6 +98,7 @@ bool manuModel::readOBJ( char * filename )
 		getline(objfile,line);
 		if((line[0] == 'g') && (line[1] == ' ')) {
 			VertexGroup thisgroup;
+			thisgroup.texName = "untextured";
 			char * namebuf = (char *)calloc(BUF_SIZE,sizeof(char));
 			sscanf(line.c_str(),"g %s",namebuf);
 			thisgroup.groupName = std::string(namebuf);
@@ -123,6 +124,15 @@ bool manuModel::readOBJ( char * filename )
 					thistri.idx2 = v2-1;
 					thistri.idx3 = v3-1;
 					trigroups.push_back(thistri);
+					
+					verList[v1-1].u1 = textureoffsets[t1-1].u;
+					verList[v1-1].v1 = textureoffsets[t1-1].v;
+					
+					verList[v2-1].u1 = textureoffsets[t2-1].u;
+					verList[v2-1].v1 = textureoffsets[t2-1].v;
+
+					verList[v3-1].u1 = textureoffsets[t3-1].u;
+					verList[v3-1].v1 = textureoffsets[t3-1].v;
 
 					// printf("f %d/%d %d/%d %d/%d\n",v1,t1,v2,t2,v3,t3);
 					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v1-1]),&(textureoffsets[t1-1])));
