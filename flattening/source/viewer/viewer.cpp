@@ -222,7 +222,12 @@ void InitFromFileNames(int pos) {
 
 	selected_file = fileNames[pos];
 	corresponding_image = selected_file;
-	corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg");
+	if(selected_file.compare(selected_file.length()-5,5,".surf") == 0) {
+		corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg");
+	}
+	else {
+		corresponding_image.replace(corresponding_image.end()-4,corresponding_image.end(),".jpg");
+	}
 	// printf( "%s\n", selected_file.c_str() );
 	// printf( "%s\n", corresponding_image.c_str() );
 	init((char *)(directory + selected_file).c_str(), (char *)(directory + corresponding_image).c_str());
