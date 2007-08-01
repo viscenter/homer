@@ -83,15 +83,28 @@ int main( int argc, char * argv[] )
 
 	fprintf( objfile, "# Vertices %d\n", nVer );
 	for( int i = 0; i < nVer; i++ ) {
-		fprintf( objfile, "v %.6f %.6f %.6f\nvt %.6f %.6f\n",
+		fprintf( objfile, "v %.6f %.6f %.6f\n",
 				verList[i].x,
 				verList[i].y,
-				verList[i].z,
+				verList[i].z
+				);
+		fprintf( objfile, "vt %.6f %.6f\n",
 				verList[i].u1,
 				1.0 - verList[i].v1 );
 	}
 
+	/*	
+	for( int i = 0; i < nVer; i++ ) {
+		fprintf( objfile, "vt %.6f %.6f\n",
+				verList[i].u1,
+				1.0 - verList[i].v1 );
+	}
+	*/
+
 	fprintf( objfile, "# Triangles %d\n", nTrig );
+	// fprintf( objfile, "g generic\n" );
+	fprintf( objfile, "mtllib va279v3d-2000.mtl\n" );
+	fprintf( objfile, "usemtl text\n" );
 	for( int i = 0; i < nTrig; i++ ) {
 		fprintf( objfile, "f %d/%d %d/%d %d/%d\n",
 				trigList[i].idx1, trigList[i].idx1,
