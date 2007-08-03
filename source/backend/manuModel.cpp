@@ -406,7 +406,7 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	return 0;
 }
 
-void saveCompressed(char * infilename, int i, int j) {
+void saveCompressed(char * infilename, int i, int j, int imaW, int imaH) {
 	GLint size_in_bytes;
 
 	//if(!glGetCompressedTexImageEXT) {
@@ -432,6 +432,8 @@ void saveCompressed(char * infilename, int i, int j) {
 			errtest(__FILE__,__LINE__,__FUNCTION__);
 
 			FILE * outfile = fopen(filename,"w");
+			fprintf(outfile,"%d %d\n",imaW,imaH);
+			fprintf(outfile,"%d\n",size_in_bytes);
 			fwrite(curimg,1,size_in_bytes,outfile);
 			fclose(outfile);
 			
@@ -503,7 +505,7 @@ void manuModel::readTextureSplit(pixel *colorIma, char * filename)
 					currentTexture->hh = imaH;
 					textureFormat = COLOR;
 					initTexture( currentTexture );
-					saveCompressed(filename,i,j);
+					saveCompressed(filename,i,j,imaW,imaH);
 					
 				}
 			}
@@ -566,9 +568,18 @@ void manuModel::readCachedMipmap(char * infilename)
 
 	int border_h = TEXH-border;
 	int border_w = TEXW-border;
+	
+	sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename+strlen("venetus/"),0,0,0);
 
-	imaW = 7230;
-	imaH = 5428;
+	FILE * testfile = fopen(filename,"r");
+	if(!testfile) {
+		printf("ERROR OPENING FILE\n");
+	}
+	fscanf( testfile, "%d %d\n", &imaW, &imaH );
+	fclose( testfile );
+
+	// imaW = 7230;
+	// imaH = 5428;
 
 	tileH = (int)ceil((double) (imaH-TEXH)/((double) border_h))+1;
 	tileW = (int)ceil((double) (imaW-TEXW)/((double) border_w))+1;
@@ -576,6 +587,7 @@ void manuModel::readCachedMipmap(char * infilename)
 	if(SMT_DEBUG) printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
 
 	texArray = true;
+			
 
 	for(int i = 0; i < tileH; i++) {
 		for(int j = 0; j < tileW; j++) {
@@ -607,11 +619,13 @@ void manuModel::readCachedMipmap(char * infilename)
 			textureFormat = COLOR;
 		
 			// load in the file
-			GLvoid * data = malloc(size_in_bytes);
 			FILE * infile = fopen(filename,"r");
 			if(!infile) {
 				printf("ERROR OPENING FILE\n");
 			}
+			fscanf( infile, "%d %d\n", &imaW, &imaH );
+			fscanf( infile, "%d\n", &size_in_bytes );
+			GLvoid * data = malloc(size_in_bytes);
 			fread(data,1,size_in_bytes,infile);
 			fclose(infile);
 
