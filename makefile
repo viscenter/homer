@@ -25,7 +25,7 @@ UNAME	:=	$(shell uname -s)
 LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm 
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
-CFLAGS	+=	-O3
+CFLAGS	+=	-O0 -g
 CFLAGS  += -DUSE_DISPLAY_LISTS 
 
 # Linux-specific flags

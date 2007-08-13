@@ -433,7 +433,7 @@ void saveCompressed(char * infilename, int i, int j, int imaW, int imaH) {
 
 			FILE * outfile = fopen(filename,"w");
 			fprintf(outfile,"%d %d\n",imaW,imaH);
-			fprintf(outfile,"%d\n",size_in_bytes);
+			fprintf(outfile,"%d\nX",size_in_bytes);
 			fwrite(curimg,1,size_in_bytes,outfile);
 			fclose(outfile);
 			
@@ -624,7 +624,7 @@ void manuModel::readCachedMipmap(char * infilename)
 				printf("ERROR OPENING FILE\n");
 			}
 			fscanf( infile, "%d %d\n", &imaW, &imaH );
-			fscanf( infile, "%d\n", &size_in_bytes );
+			fscanf( infile, "%d\nX", &size_in_bytes );
 			GLvoid * data = malloc(size_in_bytes);
 			fread(data,1,size_in_bytes,infile);
 			fclose(infile);
