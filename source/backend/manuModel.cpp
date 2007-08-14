@@ -428,7 +428,7 @@ void saveCompressed(char * infilename, int i, int j, int imaW, int imaH) {
 			printf("%d: Saving %d bytes to %s\n",level,size_in_bytes,filename);
 			
 			glGetCompressedTexImageARB(GL_TEXTURE_2D, level, curimg);
-			glCompressedTexImage2DARB(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, 4096, 4096, 0, size_in_bytes, curimg);
+			// glCompressedTexImage2DARB(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, 4096, 4096, 0, size_in_bytes, curimg);
 			errtest(__FILE__,__LINE__,__FUNCTION__);
 
 			FILE * outfile = fopen(filename,"w");
@@ -674,7 +674,9 @@ void manuModel::readTexture(char *filename)
 	 else {
 		 readImage( filename, colorIma, imaW, imaH );
 		 readTextureSplit(colorIma,filename);
-		}
+		 // no sense in keeping the subIma/colorIma around, we don't actually use it
+		 delete[] colorIma;
+	 }
  }
  else {
 	 readImage( filename, colorIma, imaW, imaH );
