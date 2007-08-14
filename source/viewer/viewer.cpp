@@ -131,7 +131,7 @@ void update_once(void)
 int frame=0;
 int mytime=0,mytimebase=0;
 
-void Display()
+void MyDisplay()
 {
 	/*
 	frame++;
@@ -444,7 +444,7 @@ int main( int argc, char** argv )
 	}
 	*/
 
-	glutDisplayFunc( Display );
+	glutDisplayFunc( MyDisplay );
 
 	setup_glui();
 	
