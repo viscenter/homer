@@ -26,6 +26,7 @@ using namespace std;
 #define WINDOW_HEIGHT 600
 
 #define DETACHED_CONTROLS 0
+#define CACHE_BUTTON 1
 
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
@@ -40,10 +41,10 @@ GLUI *glui;
 GLUI_Listbox *fileBox;
 GLUI_EditText *searchBox;
 GLUI_Translation *trans_z;
-GLUI_Button *reloadButton, *prevButton, *nextButton;
+GLUI_Button *reloadButton, *prevButton, *nextButton, *cacheButton;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, SEARCH_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, SEARCH_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID, CACHE_ID };
 
 deque<string> fileNames;
 
@@ -246,6 +247,32 @@ void DisableGLUIandInit(void)
 	}
 }
 
+void cacheAllFiles(void)
+{
+	for(unsigned int i = 0; i < fileNames.size(); i++) {
+		string selected_file = fileNames[i];
+		string corresponding_image = selected_file;
+		if(selected_file.compare(selected_file.length()-5,5,".surf") == 0) {
+			corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg-0-0-0.cmp");
+		}
+		else {
+			corresponding_image.replace(corresponding_image.end()-4,corresponding_image.end(),".jpg-0-0-0.cmp");
+		}
+		corresponding_image = "venetus/cache/" + corresponding_image;
+	 	printf("Checking for %s: ", corresponding_image.c_str());	
+		if(access(corresponding_image.c_str(),R_OK) != 0) {
+			printf("not found, generating\n");
+			fileBox->set_int_val(i);
+			DeleteSystem();
+			DisableGLUIandInit();
+			MyDisplay();
+		}
+		else {
+			printf("found, skipping\n");
+		}
+	}
+}
+
 void control_cb(int control)
 {
 	switch( control )
@@ -278,9 +305,12 @@ void control_cb(int control)
 		case NEXT_ID:
 			prevButton->enable();
 			fileBox->set_int_val(fileBox->get_int_val()+1);
-			
+		
 			DeleteSystem();
 			DisableGLUIandInit();
+			break;
+		case CACHE_ID:
+			cacheAllFiles();
 			break;
 		case FLATTENING_ID:
 			reloadButton->enable();
@@ -368,6 +398,10 @@ void setup_glui(void)
 	prevButton->disable();
  
   nextButton = glui->add_button( "Next" , NEXT_ID, control_cb);
+
+	if(CACHE_BUTTON) {
+		glui->add_button( "Cache All", CACHE_ID, control_cb);
+	}
 
   glui->add_statictext( "" );
 	
