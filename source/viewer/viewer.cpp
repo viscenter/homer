@@ -284,14 +284,16 @@ void control_cb(int control)
 			ToggleVerticesAndSprings();
 			break;
 		case SEARCH_ID:
-			for(unsigned int i = 0; i < fileNames.size(); i++) {
-				if(fileNames[i].find(string(searchBox->get_text()),0) != string::npos) {
-					searchBox->set_text( "" );
-					fileBox->set_int_val(i);
-					printf("Found %d\n",i);
-					DeleteSystem();
-					DisableGLUIandInit();
-					break;
+			if(strcmp(searchBox->get_text(), "") != 0) {
+				for(unsigned int i = 0; i < fileNames.size(); i++) {
+					if(fileNames[i].find(string(searchBox->get_text()),0) != string::npos) {
+						searchBox->set_text( "" );
+						fileBox->set_int_val(i);
+						printf("Found %d\n",i);
+						DeleteSystem();
+						DisableGLUIandInit();
+						break;
+					}
 				}
 			}
 			break;
@@ -339,6 +341,24 @@ void control_cb(int control)
 			break;
 	}
 	glutPostRedisplay();
+}
+
+void MyKeyboard( unsigned char value, int x, int y )
+{
+	char inputval[] = "0";
+
+	// printf("MyKeyboard\n");
+	if(strcmp(searchBox->get_text(),"") == 0) {
+		// printf("Empty, setting %c\n",value);
+		glui->activate_control( searchBox, GLUI_ACTIVATE_MOUSE );
+		inputval[0] = value;
+		searchBox->set_text(inputval);
+		searchBox->insertion_pt = 1;
+	}
+	else if(GLUI_Master.active_control == searchBox) {
+		// printf("Passing %c\n",value);
+		glui_keyboard_func(value,x,y);
+	}
 }
 
 void MyReshapeCanvas( int width, int height )
@@ -479,6 +499,7 @@ int main( int argc, char** argv )
 	*/
 
 	glutDisplayFunc( MyDisplay );
+	glutKeyboardFunc( MyKeyboard );
 
 	setup_glui();
 	
