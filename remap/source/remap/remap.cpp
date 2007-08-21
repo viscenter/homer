@@ -78,7 +78,6 @@ int main( int argc, char * argv[] )
 	}
 	printf("Mapped texture\n");
 
-	opticaltri();
 
 	printf("Success\n");
 	return 0;
@@ -649,43 +648,28 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		CvMat * clean_texture = cvCreateMat( verts, 2, CV_32FC1 );
 		CvMat * H;
 
-		CvMat * tex_c3 = cvCreateMat( 1, verts, CV_32FC2 );
-		CvMat * clean_c3 = cvCreateMat( 1, verts, CV_32FC2 );
-		for(int i = 0; i < verts; i++) {
-			tex_c3->data.fl[2*i+0] = texture->data.fl[2*i+0];
-			tex_c3->data.fl[2*i+1] = texture->data.fl[2*i+1];
-		}
-
-		match( thumb_file, clean_file, &H );
-		
-		printf("Performing perspective transform on points...");
-		cvPerspectiveTransform( tex_c3, clean_c3, H );
-		for(int i = 0; i < verts; i++) {
-			clean_texture->data.fl[2*i+0] = clean_c3->data.fl[2*i+0];
-			clean_texture->data.fl[2*i+1] = clean_c3->data.fl[2*i+1];
-		}
-		printf("done.\n");
-
-		cvReleaseMat( &H );
-
-		cvReleaseMat( &tex_c3 );
-		cvReleaseMat( &clean_c3 );
-
 		printf("Warping clean image to dirty image...");
+		match( thumb_file, clean_file, &H );
 		match( clean_file, thumb_file, &H );
-		
-		IplImage * clean_remapped = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
-		clean = cvLoadImage( clean_file, CV_LOAD_IMAGE_COLOR );
 	
-		camSize = cvGetSize(clean);
-
-		cvWarpPerspective( clean, clean_remapped, H, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(255) ); 
+		if(H != NULL) {	
+			IplImage * clean_remapped = cvLoadImage( thumb_file, CV_LOAD_IMAGE_COLOR );
+			clean = cvLoadImage( clean_file, CV_LOAD_IMAGE_COLOR );
 		
-		cvSaveImage( "remapped.jpg", clean_remapped );
+			camSize = cvGetSize(clean);
 
-		cvReleaseImage( &clean );
-		cvReleaseImage( &clean_remapped );
-		printf("done.\n");
+			cvWarpPerspective( clean, clean_remapped, H, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(255) ); 
+			
+			cvSaveImage( "remapped.jpg", clean_remapped );
+
+			cvReleaseImage( &clean );
+			cvReleaseImage( &clean_remapped );
+			printf("done.\n");
+		}
+		else {
+			printf("error. Couldn't compute transform matrix.\n");
+			exit(1);
+		}
 
 		
 		CvMemStorage * storage = cvCreateMemStorage();
@@ -720,6 +704,35 @@ bool mapTexture( const char * file, const char * thumb_file, const char * clean_
 		cvSaveImage( "conhull-dirty-thresh.jpg", dirty_thresh_conhull );	
 		
 		cvReleaseImage( &dirty_thresh_conhull );
+	
+		opticaltri( texture, verts );
+
+		CvMat * tex_c3 = cvCreateMat( 1, verts, CV_32FC2 );
+		CvMat * clean_c3 = cvCreateMat( 1, verts, CV_32FC2 );
+		for(int i = 0; i < verts; i++) {
+			tex_c3->data.fl[2*i+0] = texture->data.fl[2*i+0];
+			tex_c3->data.fl[2*i+1] = texture->data.fl[2*i+1];
+		}
+
+		CvMat * Hinv;// = cvCreateMat(3,3,CV_64FC1);
+		match( thumb_file, clean_file, &Hinv );
+		// cvInvert( H, Hinv, CV_LU );
+	
+		if((H != NULL) && (Hinv != NULL)) {	
+			printf("Performing perspective transform on points...");
+			cvPerspectiveTransform( tex_c3, clean_c3, Hinv );
+			for(int i = 0; i < verts; i++) {
+				clean_texture->data.fl[2*i+0] = clean_c3->data.fl[2*i+0];
+				clean_texture->data.fl[2*i+1] = clean_c3->data.fl[2*i+1];
+			}
+			printf("done.\n");
+
+			cvReleaseMat( &Hinv );
+			cvReleaseMat( &H );
+		}
+
+		cvReleaseMat( &tex_c3 );
+		cvReleaseMat( &clean_c3 );
 
 		fprintf( output, "Vertices %d\n", verts );
 		for( int i=0; i<verts; ++i )

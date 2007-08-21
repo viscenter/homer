@@ -235,7 +235,7 @@ int opticalflow( char * im1fname, char * im2fname, CvPoint2D32f * &source_points
 	return count;
 }
 
-int opticaltri(void)
+int opticaltri( CvMat * &clean_texture, int verts )
 {
 	char * im1fname = "conhull-dirty-thresh.jpg";
 	char * im2fname = "conhull-clean-thresh.jpg";
@@ -517,7 +517,7 @@ int opticaltri(void)
 					*/
 
 					if( (result->data.fl[0] > MIN_VAL) && (result->data.fl[1] > MIN_VAL) && (result->data.fl[2] > MIN_VAL) && (fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01) ) {
-					// if((u > 0) || (v > 0) /*&& ((u +v) < 1)*/ ) {
+					// if((u > 0) || (v > 0) /*&& ((u +v) < 1)*/ )
 						// printf("Barycentric: %f %f %f\n", result->data.fl[0], result->data.fl[1], result->data.fl[2]);
 						// this point is inside this triangle
 						// printf("Point %d,%d inside %d,%d %d,%d %d,%d\n",x,y,trivec[i].points[0].x,trivec[i].points[0].y,
@@ -542,6 +542,37 @@ int opticaltri(void)
 					cvReleaseMat( &result );
 					cvReleaseMat( &curp );
 				}
+			}
+			
+			for(int k = 0; k < verts; k++) {
+				double x = clean_texture->data.fl[2*k+0];
+				double y = clean_texture->data.fl[2*k+1];
+				
+				// check to see if we're inside this triangle
+				CvMat * curp = cvCreateMat(3, 1, CV_32FC1);
+				CvMat * result = cvCreateMat(3, 1, CV_32FC1);
+				curp->data.fl[0] = x;
+				curp->data.fl[1] = y;
+				curp->data.fl[2] = 1;
+				cvMatMul( baryinvvec[i], curp, result );
+			
+				if( (result->data.fl[0] > MIN_VAL) && (result->data.fl[1] > MIN_VAL) && (result->data.fl[2] > MIN_VAL) && (fabs(1.0 - (result->data.fl[0]+result->data.fl[1]+result->data.fl[2])) <= 0.01) ) {
+					
+					CvMat * sourcepoint = cvCreateMat(3, 1, CV_32FC1);
+					cvMatMul( newcorners, result, sourcepoint );	
+				
+					double sourcex = sourcepoint->data.fl[0]/*/sourcepoint->data.fl[2]*/;
+					double sourcey = sourcepoint->data.fl[1]/*/sourcepoint->data.fl[2]*/;
+					if((sourcex >= 0) && (sourcey >= 0) && (sourcex < (image1->width)) && (sourcey < (image1->height))) {
+						clean_texture->data.fl[2*k+0] = sourcex;
+						clean_texture->data.fl[2*k+1] = sourcey;
+						// cvSet2D( image1, y, x, cvGet2D( clean_nonthresh, (int)sourcey, (int)sourcex ) );
+					}
+
+					cvReleaseMat( &sourcepoint );
+				}
+				cvReleaseMat( &result );
+				cvReleaseMat( &curp );
 			}
 			cvReleaseMat( &newcorners );
 		}

@@ -24,8 +24,7 @@
 #define KDTREE_BBF_MAX_NN_CHKS 200
 
 /* threshold on squared ratio of distances between NN and 2nd NN */
-#define NN_SQ_DIST_RATIO_THR 0.49
-
+#define NN_SQ_DIST_RATIO_THR 0.25
 
 int match( const char * img1fname, const char * img2fname, CvMat **H )
 {
@@ -99,9 +98,14 @@ int match( const char * img1fname, const char * img2fname, CvMat **H )
     // CvMat* H;
     *H = ransac_xform( feat1, n1, FEATURE_FWD_MATCH, lsq_homog, 4, 0.01,
 		      homog_xfer_err, 3.0, NULL, NULL );
-		printf("Perspective transform:\n");
-		for( i = 0; i < 3; i++ ) {
-			printf("%0.6f %0.6f %0.6f\n", (*H)->data.db[3*i+0], (*H)->data.db[3*i+1], (*H)->data.db[3*i+2]);
+		if(*H != NULL) {
+			printf("Perspective transform:\n");
+			for( i = 0; i < 3; i++ ) {
+				printf("%0.6f %0.6f %0.6f\n", (*H)->data.db[3*i+0], (*H)->data.db[3*i+1], (*H)->data.db[3*i+2]);
+			}
+		}
+		else {
+			printf("Unable to compute transform\n");
 		}
 		/*
 		CvMat * Hinv = cvCreateMat(3,3,CV_64FC1);
