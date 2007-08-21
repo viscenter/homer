@@ -214,6 +214,7 @@ void getFileNames()
 		exit(1);
 	}
 	closedir(pdir);
+	sort(fileNames.begin(),fileNames.end());
 }
 
 void InitFromFileNames(int pos) {
