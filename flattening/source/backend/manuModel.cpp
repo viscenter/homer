@@ -71,7 +71,10 @@ manuModel::manuModel()
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &TEXW);
 	TEXH = TEXW;
-	// if( SMT_DEBUG ) printf("Max texture size is: %d x %d\n",TEXW,TEXH);
+	
+	TEXW = 2048;
+	TEXH = TEXW;
+	if( SMT_DEBUG ) printf("Max texture size is: %d x %d\n",TEXW,TEXH);
 }
 
 manuModel::~manuModel()
