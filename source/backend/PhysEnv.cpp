@@ -200,15 +200,16 @@ void renderBestTextureSplit(int idx, int cell_x, int cell_y)
 	double cur_u = manu->verList[idx].u1;
 	double cur_v = manu->verList[idx].v1;
 
-	// scaled position in a non-bordered tiling
-	double u_scaled = cur_u*imaW/(orig_tileW*TEXW);
-	double v_scaled = cur_v*imaH/(orig_tileH*TEXH);
+	// scaled position in pixels 
+	double u_scaled = cur_u*imaW/*/(orig_tileW*TEXW)*/;
+	double v_scaled = cur_v*imaH/*/(orig_tileH*TEXH)*/;
 
 	// cut position
-	cur_u = u_scaled - ((cell_x * (TEXW - border))/orig_pixelW);
-	cur_v = v_scaled - ((cell_y * (TEXH - border))/orig_pixelH);
+	cur_u = u_scaled - (cell_x * (TEXW - border))/*/orig_pixelW)*/;
+	cur_v = v_scaled - (cell_y * (TEXH - border))/*/orig_pixelH)*/;
 
 	// scale the cut position to the local tile
+	/*
 	double cell_percent_x = ((double)1.0/(double)tileW);
 	cur_u = cur_u/cell_percent_x;
 	cur_u -= cell_x;
@@ -217,6 +218,9 @@ void renderBestTextureSplit(int idx, int cell_x, int cell_y)
 	cur_v = cur_v/cell_percent_y;
 	cur_v -= cell_y;
 	cur_v += ((double)border/(double)TEXH)*cell_y;
+	*/
+	cur_u = cur_u / (double)TEXW;
+	cur_v = cur_v / (double)TEXH;
 	// cur_v = (double)1.0 - cur_v;
 
 	// cur_u = (u_scaled-(cell_percent_x*(double)cell_x))/cell_percent_x;
@@ -232,6 +236,8 @@ void renderBestTextureSplit(int idx, int cell_x, int cell_y)
 		printf("%f,%f\t%f,%f\n",u_scaled,v_scaled,cur_u,cur_v);
 	}
 	*/
+
+	// printf("Cell: %d,%d\tPos: %f,%f\tOutput: %f,%f\n",cell_x,cell_y,u_scaled,v_scaled,cur_u,cur_v);
 
 	glTexCoord2f( cur_u, cur_v );
 }
@@ -259,6 +265,17 @@ void bindBestTextureSplit(int idx1, int idx2, int idx3, int &best_x, int &best_y
 	indexes[1] = idx2;
 	indexes[2] = idx3;
 
+	// tileH = 4
+	// tileW = 5
+	// imaW = 7230
+	// imaH = 5428
+	// orig_tileH = 3
+	// orig_tileW = 4
+	// orig_pixelH = 6144
+	// orig_pixelW = 8192
+	// orig_sizeH = 0.33333...
+	// orig_sizeW = 0.25
+
 	// array containing votes for each texture tile
 	// 3 = all three vertices are within this tile
 	int* votes = (int*)calloc(tileW*tileH,sizeof(int));
@@ -268,17 +285,17 @@ void bindBestTextureSplit(int idx1, int idx2, int idx3, int &best_x, int &best_y
 		double cur_v = manu->verList[indexes[i]].v1;
 
 		// scaled position in a non-bordered tiling
-		double u_scaled = cur_u*imaW/(orig_tileW*TEXW);
-		double v_scaled = cur_v*imaH/(orig_tileH*TEXH);
+		double u_scaled = cur_u*imaW/*/(orig_tileW*TEXW)*/;
+		double v_scaled = cur_v*imaH/*/(orig_tileH*TEXH)*/;
 		// v_scaled = (double)1.0 - v_scaled;
 
 		for(int y = 0; y < tileH; y++) {
-			if(((y * (TEXH - border)) <= (v_scaled * orig_pixelH)) &&
-				 ((y * (TEXH - border) + TEXH) > (v_scaled * orig_pixelH)) ) {
+			if(((y * (TEXH - border)) <= (v_scaled/* * orig_pixelH*/)) &&
+				 ((y * (TEXH - border) + TEXH) > (v_scaled/* * orig_pixelH*/)) ) {
 				for(int x = 0; x < tileW; x++) {
 					// check to see if u,v is in this tile
-					if(((x * (TEXW - border)) <= (u_scaled * orig_pixelW)) &&
-						 ((x * (TEXW - border) + TEXW) > (u_scaled * orig_pixelW)) ) {
+					if(((x * (TEXW - border)) <= (u_scaled/* * orig_pixelW*/)) &&
+						 ((x * (TEXW - border) + TEXW) > (u_scaled/* * orig_pixelW*/)) ) {
 						// votes[(((tileH - 1) - y) * tileW) + x]++;
 						votes[(y * tileW) + x]++;
 					}
@@ -315,6 +332,8 @@ void bindBestTextureSplit(int idx1, int idx2, int idx3, int &best_x, int &best_y
 			// printf("\t%d,%d\t%d\n",x,y,votes[(y * tileW) + x]);
 		}
 	}
+
+	//printf("Input: %f,%f\tBest texture: %d,%d\n",manu->verList[indexes[0]].u1,manu->verList[indexes[0]].v1,best_x,best_y);
 
 	if(!fully_contained) {
 		printf("Found not fully contained polygon\n");
