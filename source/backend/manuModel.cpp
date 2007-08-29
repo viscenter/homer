@@ -1,6 +1,6 @@
 #include <new>
 #ifdef __APPLE__
-#include <GL/glew.h>
+#include "GLee.h"
 #include <GLUT/glut.h>
 #else
 #include "GLee.h"
