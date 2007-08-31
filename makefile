@@ -135,7 +135,7 @@ endif
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
-.PHONY: $(BUILD) smt clean
+.PHONY: $(BUILD) smt clean cacheclean
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -148,6 +148,9 @@ smt:
 clean:
 	rm -f $(BUILDBINS)
 	rm -rf $(BUILD)
+
+cacheclean:
+	rm venetus/cache/*
 
 else # in build directory
 
