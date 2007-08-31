@@ -640,7 +640,7 @@ void manuModel::readCachedMipmap(char * infilename)
 			//			0, GL_RGB, GL_UNSIGNED_BYTE, data );
 
 			if(GLEE_ARB_texture_compression) {
-				glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,4096,4096,0,size_in_bytes,data);
+				glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,TEXH,TEXW,0,size_in_bytes,data);
 			printf("Reading as format %d\n",GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
 			// glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
 			}
