@@ -39,7 +39,11 @@
 #include "stdinc.h"
 #include "algebra3.h"
 #include "quaternion.h"
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
 
 class Arcball {
 public:

@@ -123,7 +123,11 @@ int    GLUI_EditText::key_handler( unsigned char key,int modifiers )
     glui->disactivate_current_control();
     return true;
   }
-  else if ( key == 8 ) {       /* BACKSPACE */
+  else if ( (key == 8)
+#ifdef __APPLE__
+			|| (key == 127) /* DELETE */
+#endif
+			) {       /* BACKSPACE */
     if ( sel_start == sel_end ) {   /* no selection */
       if ( insertion_pt > 0 ) {
 	/*** See if we're deleting a period in a float data-type box ***/
