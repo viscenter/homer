@@ -10,6 +10,7 @@
 #include "smtss.h"
 
 #include <glui.h>
+#include <curl/curl.h>
 
 #include <errno.h>
 #include <dirent.h>
@@ -478,6 +479,48 @@ void setup_glui(void)
   GLUI_Master.set_glutIdleFunc( MyGlutIdle );
 }
 
+struct MemoryStruct {
+	char *memory;
+	size_t size;
+};
+
+static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	size_t realsize = size * nmemb;
+	struct MemoryStruct *mem = (struct MemoryStruct *)data;
+
+	mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
+	if (mem->memory) {
+		memcpy(&(mem->memory[mem->size]), ptr, realsize);
+		mem->size += realsize;
+		mem->memory[mem->size] = 0;
+	}
+	return realsize;
+}
+
+int curltest()
+{
+	CURL *curl;
+	CURLcode res;
+
+	struct MemoryStruct chunk;
+
+	curl = curl_easy_init();
+	if(curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, "halsted.vis.uky.edu/~baumann/httptest/pages.xml");
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
+		res = curl_easy_perform(curl);
+
+		curl_easy_cleanup(curl);
+	}
+
+	if(chunk.memory)
+		free(chunk.memory);
+
+	return 0;
+}
+
 int main( int argc, char** argv )
 {
 	string mesh_file, image_file, script_file, output_geometry;
@@ -503,6 +546,8 @@ int main( int argc, char** argv )
 	glutKeyboardFunc( MyKeyboard );
 
 	setup_glui();
+	
+	curltest();
 	
 	InitFromFileNames(0);
 
