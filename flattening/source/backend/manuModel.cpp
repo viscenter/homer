@@ -1,14 +1,10 @@
 #include <new>
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+#include "GLee.h"
 #include <GLUT/glut.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glext.h>
 #else
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include "GLee.h"
 #include <GL/glut.h>
-#include <GL/glext.h>
 #endif
 #include <math.h>
 #include "MButils.h"
@@ -18,35 +14,24 @@
 #include "cv.h"
 #include "highgui.h"
 
+/*
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+*/
+#include <unistd.h>
+
 GLint TEXW;
 GLint TEXH;
 
-int isExtensionSupported(const char *extension)
+void errtest(const char * file, const int line, const char * fun)
 {
-  const GLubyte *extensions = NULL;
-  const GLubyte *start;
-  GLubyte *where, *terminator;
-
-  /* Extension names should not have spaces. */
-  where = (GLubyte *) strchr(extension, ' ');
-  if (where || *extension == '\0')
-    return 0;
-  extensions = glGetString(GL_EXTENSIONS);
-  /* It takes a bit of care to be fool-proof about parsing the
-     OpenGL extensions string. Don't be fooled by sub-strings,
-     etc. */
-  start = extensions;
-  for (;;) {
-    where = (GLubyte *) strstr((const char *) start, extension);
-    if (!where)
-      break;
-    terminator = where + strlen(extension);
-    if (where == start || *(where - 1) == ' ')
-      if (*terminator == ' ' || *terminator == '\0')
-        return 1;
-    start = terminator;
-  }
-  return 0;
+	char * nodir = strrchr(file,'/')+1;
+	GLint errval = glGetError();
+	if(errval) {
+		printf("Error at %s:%d\t%s\n",nodir,line,gluErrorString(errval));
+	}
 }
 
 manuModel::manuModel()
@@ -83,6 +68,7 @@ manuModel::~manuModel()
 	
 	texture *next = firstTexture->nextTexture;
 	delete[] firstTexture->ima;
+	glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
 	// delete firstTexture->subIma;
 	delete firstTexture;
 	while( next != NULL )
@@ -90,6 +76,7 @@ manuModel::~manuModel()
 		currentTexture = next;
 		next = currentTexture->nextTexture;
 		delete[] currentTexture->ima;
+		glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
 		// delete currentTexture->subIma;
 		delete currentTexture;
 	}
@@ -420,7 +407,43 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	return 0;
 }
 
-void manuModel::readTextureSplit(pixel *colorIma)
+void saveCompressed(char * infilename, int i, int j, int imaW, int imaH) {
+	GLint size_in_bytes;
+
+	//if(!glGetCompressedTexImageEXT) {
+	//	printf("No compressed tex image fetch!\n");
+	//}
+
+	infilename += strlen("venetus/");
+
+	char filename[256];
+	// save out the compressed mipmapped images
+	for(int level = 0; level < 1; level++) {
+		sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename,i,j,level);
+			
+				
+		if(GLEE_ARB_texture_compression) {
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE_ARB, &size_in_bytes);
+			GLvoid * curimg = (GLvoid *)malloc(size_in_bytes);
+		
+			printf("%d: Saving %d bytes to %s\n",level,size_in_bytes,filename);
+			
+			glGetCompressedTexImageARB(GL_TEXTURE_2D, level, curimg);
+			// glCompressedTexImage2DARB(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, 4096, 4096, 0, size_in_bytes, curimg);
+			errtest(__FILE__,__LINE__,__FUNCTION__);
+
+			FILE * outfile = fopen(filename,"w");
+			fprintf(outfile,"%d %d\n",imaW,imaH);
+			fprintf(outfile,"%d\nX",size_in_bytes);
+			fwrite(curimg,1,size_in_bytes,outfile);
+			fclose(outfile);
+			
+			free(curimg);
+		}
+	}
+}
+
+void manuModel::readTextureSplit(pixel *colorIma, char * filename)
 {
 	// pixel *colorIma;
 	
@@ -459,10 +482,14 @@ void manuModel::readTextureSplit(pixel *colorIma)
 						currentTexture = newTexture;
 					}
 					currentTexture->nextTexture = NULL;
-					currentTexture->id = textureID++;
+					glGenTextures(1,&textureID);
+					currentTexture->id = textureID;
 				
 					currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
 					for(int h = (i*border_h); (h < (i*border_h+TEXH)) && (h < imaH); h++) {
+						int w = j*border_w;
+						memcpy((currentTexture->ima)+((h-(i*border_h))*TEXW*3),(colorIma)+((h*imaW+w)*3),(TEXW*3)*sizeof(pixel));
+						/*	
 						for(int w = (j*border_w); (w < (j*border_w+TEXW)) && (w < imaW); w++) {
 							long offset1 = ((h-(i*border_h)) * TEXW + (w-(j*border_w))) * 3;
 							long offset2 = (h * imaW + w) * 3;
@@ -470,6 +497,7 @@ void manuModel::readTextureSplit(pixel *colorIma)
 							currentTexture->ima[offset1+1] = colorIma[offset2+1];
 							currentTexture->ima[offset1+2] = colorIma[offset2+2];
 						}
+						*/
 					}
 					currentTexture->subIma = colorIma;
 					currentTexture->w = TEXW;
@@ -478,6 +506,8 @@ void manuModel::readTextureSplit(pixel *colorIma)
 					currentTexture->hh = imaH;
 					textureFormat = COLOR;
 					initTexture( currentTexture );
+					saveCompressed(filename,i,j,imaW,imaH);
+					
 				}
 			}
 			if( SMT_DEBUG ) printf("Read texture size %i %i \n", imaW, imaH );
@@ -528,127 +558,242 @@ void manuModel::readTextureSplit2(pixel *colorIma)
 }
 */
 
-void manuModel::readTexture(char *filename)
+void manuModel::readCachedMipmap(char * infilename)
 {
-	/**************************************************************/
+	int size_in_bytes = 8388608;
+	int level = 0;
+	//int size_in_bytes = 131072;
+	//int level = 3;
+	char filename[256];
+	border = 512;
 
- //	int imaW, imaH;
- pixel *colorIma;
+	int border_h = TEXH-border;
+	int border_w = TEXW-border;
 	
- textureFile = filename;
- readImage( filename, colorIma, imaW, imaH );
+	sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename+strlen("venetus/"),0,0,0);
 
- if (YL_UseTriangularTextureMap){
-	
-	if( TRIGTEXRES < 0 || TRIGTEXRES > imaW )
-	{
-		TRIGTEXRES = 39;
-		//TRIGTEXRES = 9;
-		NUMTRIGPERROW = imaW / (TRIGTEXRES+1);
-		printf( "Using TRIGTEXRES: %d, NUMTRIGPERROW: %d\n", TRIGTEXRES, NUMTRIGPERROW );
+	FILE * testfile = fopen(filename,"r");
+	if(!testfile) {
+		printf("ERROR OPENING FILE\n");
 	}
-	else
-	{
-		NUMTRIGPERROW = imaW / ( TRIGTEXRES + 1 );
-	}
-	numberOfTrianglesInATexture = NUMTRIGPERROW * NUMTRIGPERROW;
-	int maxTextureHeight = NUMTRIGPERROW * ( TRIGTEXRES + 1 );
-	
-	int ppmHeightDone = 0, imaMinHeight = 0, imaMaxHeight = 0;
-	
-	if( colorIma != NULL )
-	{
-		if( SMT_DEBUG ) printf( "Copying surface into a texture structure. " );
-		while( ppmHeightDone < imaH )
-		{
+	fscanf( testfile, "%d %d\n", &imaW, &imaH );
+	fclose( testfile );
+
+	// imaW = 7230;
+	// imaH = 5428;
+
+	tileH = (int)ceil((double) (imaH-TEXH)/((double) border_h))+1;
+	tileW = (int)ceil((double) (imaW-TEXW)/((double) border_w))+1;
+
+	if(SMT_DEBUG) printf("Splitting texture into %d x %d tiles\n",tileW,tileH);
+
+	texArray = true;
+			
+
+	for(int i = 0; i < tileH; i++) {
+		for(int j = 0; j < tileW; j++) {
+			sprintf(filename,"venetus/cache/%s-%d-%d-%d.cmp",infilename+strlen("venetus/"),i,j,level);
+			printf("Reading cached mipmap from %s\n",filename);
+
 			if( firstTexture == NULL )
 			{
 				firstTexture = new texture;
 				currentTexture = firstTexture;
-				currentTexture->nextTexture = NULL;
-				currentTexture->id = textureID;
-				textureID++;
 			}
 			else
 			{
 				texture *newTexture = new texture;
 				currentTexture->nextTexture = newTexture;
 				currentTexture = newTexture;
-				currentTexture->nextTexture = NULL;
-				currentTexture->id = textureID;
-				textureID++;
 			}
-			currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
+			currentTexture->nextTexture = NULL;
+			glGenTextures(1,&textureID);
+			currentTexture->id = textureID;
+		
+			currentTexture->ima = new pixel[ 1 ];
 			
-			imaMinHeight = imaMaxHeight;
-			imaMaxHeight = imaH;
-			
-			if( imaMaxHeight - imaMinHeight > maxTextureHeight )
-			{
-				imaMaxHeight = imaMinHeight + maxTextureHeight;
+			currentTexture->subIma = NULL;
+			currentTexture->w = TEXW;
+			currentTexture->h = TEXH;
+			currentTexture->ww = imaW;
+			currentTexture->hh = imaH;
+			textureFormat = COLOR;
+		
+			// load in the file
+			FILE * infile = fopen(filename,"r");
+			if(!infile) {
+				printf("ERROR OPENING FILE\n");
 			}
-			
-			if( SMT_DEBUG ) printf( "Image height %d to %d.\n", imaMinHeight, imaMaxHeight );
-			for( int h = imaMinHeight; h < imaMaxHeight; h++ )
+			fscanf( infile, "%d %d\n", &imaW, &imaH );
+			fscanf( infile, "%d\nX", &size_in_bytes );
+			GLvoid * data = malloc(size_in_bytes);
+			fread(data,1,size_in_bytes,infile);
+			fclose(infile);
+
+			glBindTexture(GL_TEXTURE_2D, currentTexture->id );
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			//glTexImage2D(GL_TEXTURE_2D, level, GL_COMPRESSED_RGB_ARB, TEXW, TEXH,
+			//			0, GL_RGB, GL_UNSIGNED_BYTE, data );
+
+			if(GLEE_ARB_texture_compression) {
+				glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,TEXH,TEXW,0,size_in_bytes,data);
+			printf("Reading as format %d\n",GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+			// glCompressedTexImage2DARB(GL_TEXTURE_2D,level,GL_COMPRESSED_RGB_S3TC_DXT1_EXT,512,512,0,size_in_bytes,data);
+			}
+			GLint errval = glGetError();
+			if(errval) {
+				printf("Error: %s\n",gluErrorString(errval));
+			}
+			free(data);
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, level );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level );
+		}
+	}
+}
+
+void manuModel::readTexture(char *filename)
+{
+	/**************************************************************/
+
+ //	int imaW, imaH;
+ pixel *colorIma;
+
+ char testfile[256];
+ sprintf(testfile,"venetus/cache/%s-0-0-0.cmp",filename + strlen("venetus/"));
+	
+ textureFile = filename;
+ if(strcmp(filename+(strlen(filename)-strlen("-hi.jpg")),"-hi.jpg") == 0) {
+	 printf("Hi res file\n");
+	 if(access(testfile,R_OK) == 0) {
+		 printf("Using cached mipmap\n");
+		 readCachedMipmap(filename);
+	 }
+	 else {
+		 readImage( filename, colorIma, imaW, imaH );
+		 readTextureSplit(colorIma,filename);
+		 // no sense in keeping the subIma/colorIma around, we don't actually use it
+		 delete[] colorIma;
+	 }
+ }
+ else {
+	 readImage( filename, colorIma, imaW, imaH );
+
+	 if (YL_UseTriangularTextureMap){
+		
+		if( TRIGTEXRES < 0 || TRIGTEXRES > imaW )
+		{
+			TRIGTEXRES = 39;
+			//TRIGTEXRES = 9;
+			NUMTRIGPERROW = imaW / (TRIGTEXRES+1);
+			printf( "Using TRIGTEXRES: %d, NUMTRIGPERROW: %d\n", TRIGTEXRES, NUMTRIGPERROW );
+		}
+		else
+		{
+			NUMTRIGPERROW = imaW / ( TRIGTEXRES + 1 );
+		}
+		numberOfTrianglesInATexture = NUMTRIGPERROW * NUMTRIGPERROW;
+		int maxTextureHeight = NUMTRIGPERROW * ( TRIGTEXRES + 1 );
+		
+		int ppmHeightDone = 0, imaMinHeight = 0, imaMaxHeight = 0;
+		
+		if( colorIma != NULL )
+		{
+			if( SMT_DEBUG ) printf( "Copying surface into a texture structure. " );
+			while( ppmHeightDone < imaH )
 			{
-				long offset1 = ( h - imaMinHeight ) * TEXW * 3;
-				long offset2 = h * imaW * 3;
-				for(int w=0; w < imaW * 3; w++)
+				if( firstTexture == NULL )
 				{
-					currentTexture->ima[offset1 + w] = colorIma[offset2 + w];
+					firstTexture = new texture;
+					currentTexture = firstTexture;
+					currentTexture->nextTexture = NULL;
+					currentTexture->id = textureID;
+					textureID++;
+				}
+				else
+				{
+					texture *newTexture = new texture;
+					currentTexture->nextTexture = newTexture;
+					currentTexture = newTexture;
+					currentTexture->nextTexture = NULL;
+					currentTexture->id = textureID;
+					textureID++;
+				}
+				currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
+				
+				imaMinHeight = imaMaxHeight;
+				imaMaxHeight = imaH;
+				
+				if( imaMaxHeight - imaMinHeight > maxTextureHeight )
+				{
+					imaMaxHeight = imaMinHeight + maxTextureHeight;
+				}
+				
+				if( SMT_DEBUG ) printf( "Image height %d to %d.\n", imaMinHeight, imaMaxHeight );
+				for( int h = imaMinHeight; h < imaMaxHeight; h++ )
+				{
+					long offset1 = ( h - imaMinHeight ) * TEXW * 3;
+					long offset2 = h * imaW * 3;
+					for(int w=0; w < imaW * 3; w++)
+					{
+						currentTexture->ima[offset1 + w] = colorIma[offset2 + w];
+					}
+				}
+				
+				currentTexture->subIma = colorIma;
+				currentTexture->w = TEXW;
+				currentTexture->h = TEXH;
+				currentTexture->ww = imaW;
+				currentTexture->hh = imaMaxHeight - imaMinHeight;
+				textureFormat = COLOR;
+				initTexture( currentTexture );
+
+				ppmHeightDone = imaMaxHeight;
+			}
+			if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
+		}
+		else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
+
+		// Important
+		currentTexture = firstTexture;
+	 }
+	 else{
+		if( (imaH > TEXH) || (imaW > TEXW) ) {
+			readTextureSplit(colorIma,filename);
+		}	
+		else if( colorIma != NULL ){
+			firstTexture = new texture;
+			currentTexture = firstTexture;
+			currentTexture->nextTexture = NULL;
+			glGenTextures(1,&textureID);
+			currentTexture->id = textureID;
+				currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
+			for( int h = 0; h < imaH; h++ ){
+				for(int w=0; w < imaW; w++){
+					long offset1 = (h * TEXW + w) * 3;
+					long offset2 = (h * imaW + w) * 3;
+					currentTexture->ima[offset1] = colorIma[offset2];
+					currentTexture->ima[offset1+1] = colorIma[offset2+1];
+					currentTexture->ima[offset1+2] = colorIma[offset2+2];
 				}
 			}
-			
 			currentTexture->subIma = colorIma;
 			currentTexture->w = TEXW;
 			currentTexture->h = TEXH;
 			currentTexture->ww = imaW;
-			currentTexture->hh = imaMaxHeight - imaMinHeight;
+			currentTexture->hh = imaH;
 			textureFormat = COLOR;
 			initTexture( currentTexture );
-
-			ppmHeightDone = imaMaxHeight;
+			if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
 		}
-		if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
-	}
-	else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
-
-	// Important
-	currentTexture = firstTexture;
- }
- else{
-	if( (imaH > TEXH) || (imaW > TEXW) ) {
-		readTextureSplit(colorIma);
-	}	
-	else if( colorIma != NULL ){
-		firstTexture = new texture;
-		currentTexture = firstTexture;
-		currentTexture->nextTexture = NULL;
-		currentTexture->id = textureID;
-			currentTexture->ima = new pixel[ TEXW * 3 * TEXH ];
-		for( int h = 0; h < imaH; h++ ){
-			for(int w=0; w < imaW; w++){
-				long offset1 = (h * TEXW + w) * 3;
-				long offset2 = (h * imaW + w) * 3;
-				currentTexture->ima[offset1] = colorIma[offset2];
-				currentTexture->ima[offset1+1] = colorIma[offset2+1];
-				currentTexture->ima[offset1+2] = colorIma[offset2+2];
-			}
-		}
-		currentTexture->subIma = colorIma;
-		currentTexture->w = TEXW;
-		currentTexture->h = TEXH;
-		currentTexture->ww = imaW;
-		currentTexture->hh = imaH;
-		textureFormat = COLOR;
-		initTexture( currentTexture );
-		if( SMT_DEBUG ) printf("Read texture file %s size %i %i \n", filename, imaW, imaH );
-  }
-  else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
- } // end else
-
+		else if( SMT_DEBUG ) printf("Can't open file %s \n", filename );
+	 } // end else
  // no sense in keeping the subIma/colorIma around, we don't actually use it
  delete[] colorIma;
+ }
 }
 
 
@@ -666,9 +811,33 @@ manuModel::replaceTexture(char *filename)
 */
 }
 
+void loadMipped(GLenum internalformat, int w, int h, void * data)
+{
+	// glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internalformat, w, h,
+						0, GL_RGB, GL_UNSIGNED_BYTE, data );
+
+	//gluBuild2DMipmaps(GL_TEXTURE_2D, internalformat, w, h,
+	//					GL_RGB, GL_UNSIGNED_BYTE, data );
+	errtest(__FILE__,__LINE__,__FUNCTION__);
+	GLint size_in_bytes;
+	for(int i = 0; i <= 0; i++) {
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_ARB, &size_in_bytes);
+		printf("COMPRESSED? %d\n",size_in_bytes);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size_in_bytes);
+		errtest(__FILE__,__LINE__,__FUNCTION__);
+		printf("Compressed texture size of level %d: %d\n", i, size_in_bytes);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_INTERNAL_FORMAT, &size_in_bytes);
+		printf("Format %d (%d)\n",size_in_bytes,internalformat);
+	}
+
+}
+
 void manuModel::initTexture( texture *inTexture )
 {
 	glBindTexture(GL_TEXTURE_2D, inTexture->id );
+	errtest(__FILE__,__LINE__,__FUNCTION__);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -676,28 +845,31 @@ void manuModel::initTexture( texture *inTexture )
 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	
 	if(textureFormat == COLOR) {
-#ifdef GL_EXT_texture_compression_s3tc
-		if(isExtensionSupported("GL_EXT_texture_compression_s3tc")) {
+		/*
+		if(glexExtensionsSupported("GL_EXT_texture_compression_s3tc")) {
 			if( SMT_DEBUG ) printf("Using S3TC texture compression\n"); 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
-						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
-		// gluBuild2DMipmaps(GL_TEXTURE_2D, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
-		//				GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
-		GLint errval = glGetError();
-		if(errval) {
-			// printf("Error: %s\n",gluErrorString(errval));
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h,
+			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+			
+			loadMipped(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, (int)inTexture->w, (int)inTexture->h, inTexture->ima);	
+		
+			GLint errval = glGetError();
+			if(errval) {
+				// printf("Error: %s\n",gluErrorString(errval));
+			}
 		}
-	}
 		else
-#endif
-#ifdef GL_ARB_texture_compression
-		if(isExtensionSupported("GL_ARB_texture_compression")) {
-			if( SMT_DEBUG ) printf("Using texture compression\n"); 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
-						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+		*/
+		if(GLEE_ARB_texture_compression) {
+			if( SMT_DEBUG ) printf("Using generic ARB texture compression\n"); 
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h,
+			//			0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );
+			
+			loadMipped(GL_COMPRESSED_RGB_ARB, (int)inTexture->w, (int)inTexture->h, inTexture->ima);	
+			
+			// glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 3 );
 		}
 		else 
-#endif
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int)inTexture->w, (int)inTexture->h,
 						0, GL_RGB, GL_UNSIGNED_BYTE, inTexture->ima );

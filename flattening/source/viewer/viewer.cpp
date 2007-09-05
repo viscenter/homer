@@ -1,10 +1,8 @@
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
+#include "GLee.h" 
 #include <GLUT/glut.h>
 #else
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include "GLee.h"
 #include <GL/glut.h>
 #endif
 #include <cstdio>
@@ -28,8 +26,7 @@ using namespace std;
 #define WINDOW_HEIGHT 600
 
 #define DETACHED_CONTROLS 0
-
-extern int isExtensionSupported(const char *extension);
+#define CACHE_BUTTON 1
 
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
@@ -44,10 +41,10 @@ GLUI *glui;
 GLUI_Listbox *fileBox;
 GLUI_EditText *searchBox;
 GLUI_Translation *trans_z;
-GLUI_Button *reloadButton, *prevButton, *nextButton;
+GLUI_Button *reloadButton, *prevButton, *nextButton, *cacheButton;
 
 // User IDs for callbacks
-enum { FLATTENING_ID = 300, FILE_SELECT_ID, SEARCH_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID };
+enum { FLATTENING_ID = 300, FILE_SELECT_ID, SEARCH_ID, PREV_ID, NEXT_ID, ZOOM_ID, WRINKLING_ID, VERTICES_ID, SPRINGS_ID, QUIT_ID, CACHE_ID };
 
 deque<string> fileNames;
 
@@ -135,7 +132,7 @@ void update_once(void)
 int frame=0;
 int mytime=0,mytimebase=0;
 
-void Display()
+void MyDisplay()
 {
 	/*
 	frame++;
@@ -217,6 +214,7 @@ void getFileNames()
 		exit(1);
 	}
 	closedir(pdir);
+	sort(fileNames.begin(),fileNames.end());
 }
 
 void InitFromFileNames(int pos) {
@@ -250,6 +248,32 @@ void DisableGLUIandInit(void)
 	}
 }
 
+void cacheAllFiles(void)
+{
+	for(unsigned int i = 0; i < fileNames.size(); i++) {
+		string selected_file = fileNames[i];
+		string corresponding_image = selected_file;
+		if(selected_file.compare(selected_file.length()-5,5,".surf") == 0) {
+			corresponding_image.replace(corresponding_image.end()-5,corresponding_image.end(),".jpg-0-0-0.cmp");
+		}
+		else {
+			corresponding_image.replace(corresponding_image.end()-4,corresponding_image.end(),".jpg-0-0-0.cmp");
+		}
+		corresponding_image = "venetus/cache/" + corresponding_image;
+	 	printf("Checking for %s: ", corresponding_image.c_str());	
+		if(access(corresponding_image.c_str(),R_OK) != 0) {
+			printf("not found, generating\n");
+			fileBox->set_int_val(i);
+			DeleteSystem();
+			DisableGLUIandInit();
+			MyDisplay();
+		}
+		else {
+			printf("found, skipping\n");
+		}
+	}
+}
+
 void control_cb(int control)
 {
 	switch( control )
@@ -261,14 +285,16 @@ void control_cb(int control)
 			ToggleVerticesAndSprings();
 			break;
 		case SEARCH_ID:
-			for(unsigned int i = 0; i < fileNames.size(); i++) {
-				if(fileNames[i].find(string(searchBox->get_text()),0) != string::npos) {
-					searchBox->set_text( "" );
-					fileBox->set_int_val(i);
-					printf("Found %d\n",i);
-					DeleteSystem();
-					DisableGLUIandInit();
-					break;
+			if(strcmp(searchBox->get_text(), "") != 0) {
+				for(unsigned int i = 0; i < fileNames.size(); i++) {
+					if(fileNames[i].find(string(searchBox->get_text()),0) != string::npos) {
+						searchBox->set_text( "" );
+						fileBox->set_int_val(i);
+						printf("Found %d\n",i);
+						DeleteSystem();
+						DisableGLUIandInit();
+						break;
+					}
 				}
 			}
 			break;
@@ -282,9 +308,12 @@ void control_cb(int control)
 		case NEXT_ID:
 			prevButton->enable();
 			fileBox->set_int_val(fileBox->get_int_val()+1);
-			
+		
 			DeleteSystem();
 			DisableGLUIandInit();
+			break;
+		case CACHE_ID:
+			cacheAllFiles();
 			break;
 		case FLATTENING_ID:
 			reloadButton->enable();
@@ -315,10 +344,28 @@ void control_cb(int control)
 	glutPostRedisplay();
 }
 
+void MyKeyboard( unsigned char value, int x, int y )
+{
+	char inputval[] = "0";
+
+	// printf("MyKeyboard\n");
+	if(strcmp(searchBox->get_text(),"") == 0) {
+		// printf("Empty, setting %c\n",value);
+		glui->activate_control( searchBox, GLUI_ACTIVATE_MOUSE );
+		inputval[0] = value;
+		searchBox->set_text(inputval);
+		searchBox->insertion_pt = 1;
+	}
+	else if(GLUI_Master.active_control == searchBox) {
+		// printf("Passing %c\n",value);
+		glui_keyboard_func(value,x,y);
+	}
+}
+
 void MyReshapeCanvas( int width, int height )
 {
 	int tx, ty, tw, th;
-	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS /*|| glexExtensionsSupported("GL_CR_state_parameter") */) {
 		xy_aspect = (float)width / (float)height;
 	}
 	else {
@@ -343,7 +390,7 @@ void MyGlutIdle( void )
 
 void setup_glui(void)
 {
-	if( DETACHED_CONTROLS || isExtensionSupported("GL_CR_state_parameter") ) {
+	if( DETACHED_CONTROLS /*|| glexExtensionsSupported("GL_CR_state_parameter")*/ ) {
 		glui = GLUI_Master.create_glui( "Controls" );
 		glutReshapeFunc( MyReshapeCanvas );
 	}
@@ -372,6 +419,10 @@ void setup_glui(void)
 	prevButton->disable();
  
   nextButton = glui->add_button( "Next" , NEXT_ID, control_cb);
+
+	if(CACHE_BUTTON) {
+		glui->add_button( "Cache All", CACHE_ID, control_cb);
+	}
 
   glui->add_statictext( "" );
 	
@@ -440,8 +491,16 @@ int main( int argc, char** argv )
 
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | /*GLUT_ALPHA |*/ GLUT_DEPTH );
 	main_window = glutCreateWindow( "Venetus A Viewer" );
-	
-	glutDisplayFunc( Display );
+	/*
+	GLenum err = glewInit();
+	if(GLEW_OK != err) {
+		fprintf(stderr,"Error: %s\n", glewGetErrorString(err));
+		exit(1);
+	}
+	*/
+
+	glutDisplayFunc( MyDisplay );
+	glutKeyboardFunc( MyKeyboard );
 
 	setup_glui();
 	

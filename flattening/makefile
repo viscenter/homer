@@ -22,7 +22,7 @@ VIEWEROUT	:= viewer
 UNAME	:=	$(shell uname -s)
 
 # General *nix flags (will be overwritten for Cygwin)
-LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lglui -lGL -lGLU -lglut -lstdc++ -lm 
+LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm 
 JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
 LDFLAGS		:=
 CFLAGS	+=	-O3
@@ -43,8 +43,8 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
 	LIBS  :=	 -L/c/Program\ Files/OpenCV/lib
-	LIBS	+=	-lhighgui -lcv -lcxcore -lglui -lglut32 -lopengl32 -lglu32 -lstdc++
-	CFLAGS	+=	-D_STDCALL_SUPPORTED -D_M_IX86	
+	LIBS	+=	-lhighgui -lcv -lcxcore -lglut32 -lopengl32 -lglu32 -lstdc++
+	CFLAGS	+=	-DWIN32 -D_STDCALL_SUPPORTED -D_M_IX86	
 	CFLAGS  +=	-I/c/Program\ Files/OpenCV/cv/include -I/c/Program\ Files/OpenCV/cxcore/include \
 							-I/c/Program\ Files/OpenCV/otherlibs/highgui
 	JAVAGL	:=	smt.exe
@@ -53,9 +53,9 @@ endif
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
-	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lglui -lopengl32 -lglu32 -lglut32 -lstdc++
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	+=	-I/usr/include/opencv -I/usr/include/boost-1_33_1
+	CFLAGS	+=	-DWIN32 -I/usr/include/opencv -I/usr/include/boost-1_33_1
 	# CFLAGS += -mno-cygwin
 	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
@@ -64,8 +64,8 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 # Mac-specific flags
 ifneq (,$(findstring Darwin,$(UNAME)))
-	# export CC		:=	/usr/local/bin/gcc
-	# export CXX		:=	/usr/local/bin/g++
+	export CC		:=	/usr/bin/gcc
+	export CXX		:=	/usr/bin/g++
 	# CFLAGS	+=  -ftree-vectorize -fopenmp
 	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include -I/opt/local/include/boost-1_34
   # LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore 
@@ -77,7 +77,7 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 						/opt/local/lib/libpng.a \
 						/opt/local/lib/libtiff.a \
 						/opt/local/lib/libz.a
-	LIBS  += -lstdc++ -lm -lglui -framework OpenGL -framework GLUT -framework Foundation -framework Carbon
+	LIBS  += -lm -framework OpenGL -framework GLUT -framework Foundation -framework Carbon
 endif
 
 # gprof flags
@@ -86,7 +86,7 @@ endif
 
 BUILD	:=	build
 
-BACKENDSOURCES	:=	source/backend
+BACKENDSOURCES	:=	source/backend source/glee source/glui
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
@@ -135,7 +135,7 @@ endif
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
-.PHONY: $(BUILD) smt clean
+.PHONY: $(BUILD) smt clean cacheclean
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -148,6 +148,9 @@ smt:
 clean:
 	rm -f $(BUILDBINS)
 	rm -rf $(BUILD)
+
+cacheclean:
+	rm venetus/cache/*
 
 else # in build directory
 
