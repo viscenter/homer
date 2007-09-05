@@ -1,65 +1,180 @@
+.SUFFIXES:
+
+%.o: %.cpp
+	@echo $(notdir $<)
+	$(CXX) -MMD -MP -MF $(DEPSDIR)/$*.d $(CXXFLAGS) -c $< -o $@
+
+%.o: %.c
+	@echo $(notdir $<)
+	$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d $(CFLAGS) -c $< -o $@
+
+%.class: %.java
+	@echo $(notdir $<)
+	$(JAVAC) $(JAVAFLAGS) $< -d .
+
+export CC		:=	gcc
+export CXX		:=	g++
+export JAVAC	:=	javac
+
+SMTOUT	:= smt
+VIEWEROUT	:= viewer
+
 UNAME	:=	$(shell uname -s)
 
-ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS	:=	-lGL -lGLU -lglut -shared -D_UNIX -fPIC
-	CFLAGS	:=	
+# General *nix flags (will be overwritten for Cygwin)
+LIBS	:=	-L/usr/local/lib/ -lboost_program_options -lGL -lGLU -lglut -lstdc++ -lm 
+JNILDFLAGS	:=	-Wl -shared -D_UNIX -fPIC
+LDFLAGS		:=
+CFLAGS	+=	-O3
+# CFLAGS  += -DUSE_DISPLAY_LISTS 
+
+# Linux-specific flags
+ifneq (,$(findstring Linux,$(UNAME)))	
 	JDK		:=	/usr/lib/jvm/java-1.5.0-sun
 	JAVAGL	:= JavaGL.so
-else ifneq (,$(findstring CYGWIN,$(UNAME)))
-	LDFLAGS	:=	-lopengl32 -lglu32 -lglut32 
-	CFLAGS	:=	-g -mno-cygwin
+	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/linux
+	CFLAGS	+= `pkg-config --cflags opencv`
+	LIBS	+= `pkg-config --libs opencv`
+endif
+# MinGW-specific flags
+# Get GLUT from http://mywebpage.netscape.com/PtrPck/glut.htm
+# Use it to build GLUI
+ifneq (,$(findstring MINGW,$(UNAME)))
+	SMTOUT	:= smt.exe
+	VIEWEROUT	:= viewer.exe
+	LIBS  :=	 -L/c/Program\ Files/OpenCV/lib
+	LIBS	+=	-lhighgui -lcv -lcxcore -lglut32 -lopengl32 -lglu32 -lstdc++
+	CFLAGS	+=	-DWIN32 -D_STDCALL_SUPPORTED -D_M_IX86	
+	CFLAGS  +=	-I/c/Program\ Files/OpenCV/cv/include -I/c/Program\ Files/OpenCV/cxcore/include \
+							-I/c/Program\ Files/OpenCV/otherlibs/highgui
+	JAVAGL	:=	smt.exe
+endif
+# Cygwin-specific flags
+ifneq (,$(findstring CYGWIN,$(UNAME)))
+	SMTOUT	:= smt.exe
+	VIEWEROUT	:= viewer.exe
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
+	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
+	CFLAGS	+=	-DWIN32 -I/usr/include/opencv -I/usr/include/boost-1_33_1
+	# CFLAGS += -mno-cygwin
+	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
+	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
+endif
+# Mac-specific flags
+ifneq (,$(findstring Darwin,$(UNAME)))
+	export CC		:=	/usr/bin/gcc
+	export CXX		:=	/usr/bin/g++
+	# CFLAGS	+=  -ftree-vectorize -fopenmp
+	CFLAGS	+=	-I/usr/local/include/opencv -I/opt/local/include -I/opt/local/include/boost-1_34
+  # LIBS	:=	-L/opt/local/lib -lboost_program_options -lhighgui -lcv -lcxcore 
+	LIBS	:=	/opt/local/lib/libboost_program_options-1_34.a \
+						/usr/local/lib/lib_highgui.a \
+						/usr/local/lib/lib_cv.a \
+						/usr/local/lib/lib_cxcore.a \
+						/opt/local/lib/libjpeg.a \
+						/opt/local/lib/libpng.a \
+						/opt/local/lib/libtiff.a \
+						/opt/local/lib/libz.a
+	LIBS  += -lm -framework OpenGL -framework GLUT -framework Foundation -framework Carbon
 endif
 
-all: $(JAVAGL) smt.class
+# gprof flags
+# CFLAGS	+= -pg -g
+# LDFLAGS	:= -pg
 
-JavaGL.dll: JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o
-	gcc $(CFLAGS) -I$(JDK)/include -I$(JDK)/include/win32  -Wl,--add-stdcall-alias -shared -o JavaGL.dll JavaGL.cpp Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o $(LDFLAGS) -lstdc++
+BUILD	:=	build
 
-JavaGL.so: JavaGL.class Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o JavaGL.o smc.o
-	gcc -I$(JDK)/include -I$(JDK)/include/linux -Wl JavaGL.o Skeleton.o PhysEnv.o MathDefs.o manuModel.o MButils.o MBbitmap.o smc.o $(LDFLAGS) -o JavaGL.so
+BACKENDSOURCES	:=	source/backend source/glee source/glui
+SMTSOURCES		:=	source/smt
+VIEWERSOURCES		:=	source/viewer
+SMTJAVASOURCES	:=	source/smtjava
+INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES)
 
-Skeleton.o: Skeleton.cpp
-	gcc $(CFLAGS) -c Skeleton.cpp
+CFLAGS		+= $(INCLUDE)
+CXXFLAGS	:= $(CFLAGS)
+JAVAFLAGS	:= -sourcepath $(SOURCEPATH)
 
-PhysEnv.o: PhysEnv.cpp
-	gcc $(CFLAGS) -c PhysEnv.cpp
+ifneq ($(BUILD),$(notdir $(CURDIR))) # not in build directory
 
-MathDefs.o: MathDefs.cpp
-	gcc $(CFLAGS) -c MathDefs.cpp
+export JAVAGLBIN	:=	$(CURDIR)/$(JAVAGL)
+export SMTBIN	:=	$(CURDIR)/$(SMTOUT)
+export VIEWERBIN	:=	$(CURDIR)/$(VIEWEROUT)
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-manuModel.o: manuModel.cpp
-	gcc $(CFLAGS) -c manuModel.cpp
+export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(SMTSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(VIEWERSOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir))
 
-MButils.o: MButils.cpp
-	gcc $(CFLAGS) -c MButils.cpp
+BACKENDCPPFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+BACKENDCFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.c)))
+SMTCPPFILES		:=	$(foreach dir,$(SMTSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+VIEWERCPPFILES		:=	$(foreach dir,$(VIEWERSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SMTJAVACPPFILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 
-MBbitmap.o: MBbitmap.cpp
-	gcc $(CFLAGS) -c MBbitmap.cpp
+SMTJAVAJAVAILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.java)))
 
-smc.o: smc.cpp
-	gcc $(CFLAGS) -c smc.cpp
+# Use CXX for linking
+export LD	:=	$(CXX)
 
-JavaGL.o: JavaGL.cpp
-	g++ $(CFLAGS) -c JavaGL.cpp
+export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o) \
+							$(BACKENDCFILES:.c=.o)
+export SMTOFILES		:=	$(SMTCPPFILES:.cpp=.o)
+export VIEWEROFILES		:=	$(VIEWERCPPFILES:.cpp=.o)
+export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
+export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
-JavaGL.class: JavaGL.java
-	javac JavaGL.java
+ifneq (,$(findstring MINGW,$(UNAME)))
+	export BUILDBINS :=	$(VIEWERBIN)
+else
+	export BUILDBINS := $(SMTBIN) $(VIEWERBIN)
+endif
 
-CameraPanel.class: CameraPanel.java
-	javac CameraPanel.java
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
+export SOURCEPATH	:=	$(CURDIR)/$(SMTJAVASOURCES)
 
-DisplayPanel.class: DisplayPanel.java
-	javac DisplayPanel.java
+.PHONY: $(BUILD) smt clean cacheclean
 
-PropertiesPanel.class: PropertiesPanel.java
-	javac PropertiesPanel.java
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile
 
-smt.class: smt.java JavaGL.class CameraPanel.class DisplayPanel.class PropertiesPanel.class
-	javac smt.java
+smt:
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile $(SMTBIN)
 
 clean:
-	rm -f *.o
-	rm -f *.class
-	rm -f JavaGL.dll JavaGL.so
+	rm -f $(BUILDBINS)
+	rm -rf $(BUILD)
+
+cacheclean:
+	rm venetus/cache/*
+
+else # in build directory
+
+DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
+			$(SMTOFILES:.o=.d) \
+#			$(SMTJAVAOFILES:.o=.d)
+
+all: $(BUILDBINS)
+#all: $(SMTBIN) $(VIEWERBIN)
+#smtjava
+
+$(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
+	$(LD) $(LDFLAGS) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
+
+$(VIEWERBIN): $(BACKENDOFILES) $(VIEWEROFILES)
+	$(LD) $(LDFLAGS) $(VIEWEROFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
+
+
+# .PHONY: smtjava
+# smtjava: $(JAVAGLBIN) smt.class
+
+# $(JAVAGLBIN): $(BACKENDOFILES) $(SMTJAVAOFILES)
+# 	$(LD) $(JAVAINCLUDE) $(JNILDFLAGS) $(BACKENDOFILES) $(SMTJAVAOFILES) $(LIBS) -o $@
+
+-include $(DEPENDS)
+
+endif
