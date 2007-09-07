@@ -12,6 +12,11 @@
 #include <glui.h>
 #include <curl/curl.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
 #include <errno.h>
 #include <dirent.h>
 #include <deque>
@@ -520,6 +525,23 @@ int curltest()
 
 		curl_easy_cleanup(curl);
 	}
+
+	xmlDocPtr doc;
+	xmlXPathContextPtr xpathCtx;
+	xmlXPathObjectPtr xpathObj;
+
+	doc = xmlReadMemory(chunk.memory, chunk.size, "noname.xml", NULL, 0);
+	if(doc==NULL) {
+		printf("Parse failed\n");
+	}
+	xpathCtx = xmlXPathNewContext(doc);
+	xmlXPathRegisterNs(xpathCtx, BAD_CAST "rdf", BAD_CAST "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+
+	xpathObj = xmlXPathEvalExpression(BAD_CAST "/rdf:RDF/rdf:Description", xpathCtx);
+
+	xmlXPathFreeObject(xpathObj);
+	xmlXPathFreeContext(xpathCtx);
+	xmlFreeDoc(doc);
 
 	if(chunk.memory)
 		free(chunk.memory);

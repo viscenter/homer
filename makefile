@@ -53,9 +53,9 @@ endif
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
-	LIBS	:=	`curl-config --libs` -lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
+	LIBS	:=	`curl-config --libs` -lxml2 -lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	+=	-DWIN32 -I/usr/include/opencv -I/usr/include/boost-1_33_1 `curl-config --cflags`
+	CFLAGS	+=	-DWIN32 -I/usr/include/libxml2 -I/usr/include/opencv -I/usr/include/boost-1_33_1 `curl-config --cflags`
 	# CFLAGS += -mno-cygwin
 	# LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
