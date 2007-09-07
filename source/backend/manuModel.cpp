@@ -14,6 +14,8 @@
 #include "cv.h"
 #include "highgui.h"
 
+#include <curl/curl.h>
+
 /*
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -558,15 +560,21 @@ void manuModel::readTextureSplit2(pixel *colorIma)
 }
 */
 
-void manuModel::readCachedMipmap(char * infilename)
+void manuModel::readCachedMipmap(char * infilename, int http)
 {
 	int size_in_bytes = 8388608;
 	int level = 0;
 	//int size_in_bytes = 131072;
 	//int level = 3;
 	char filename[256];
+	char url[512];
 	border = 512;
 
+	CURL *curl;
+
+	curl = curl_easy_init();
+	
+	
 	int border_h = TEXH-border;
 	int border_w = TEXW-border;
 	
@@ -620,6 +628,19 @@ void manuModel::readCachedMipmap(char * infilename)
 			textureFormat = COLOR;
 		
 			// load in the file
+			if(http && curl) {
+				if(access(filename,R_OK) != 0) {
+					printf("Downloading %s...",filename);
+					FILE * cacheFile = fopen(filename,"w");
+					sprintf(url, "http://halsted.vis.uky.edu/~baumann/httptest/%s", filename);
+					// sprintf(url, "http://rfbaumann.com/httptest/%s", filename);
+					curl_easy_setopt(curl, CURLOPT_URL, url);
+					curl_easy_setopt(curl, CURLOPT_WRITEDATA, cacheFile);
+					curl_easy_perform(curl);
+					fclose(cacheFile);
+					printf("done\n");
+				}
+			}
 			FILE * infile = fopen(filename,"r");
 			if(!infile) {
 				printf("ERROR OPENING FILE\n");
@@ -653,6 +674,7 @@ void manuModel::readCachedMipmap(char * infilename)
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level );
 		}
 	}
+	curl_easy_cleanup(curl);
 }
 
 void manuModel::readTexture(char *filename)
@@ -663,20 +685,45 @@ void manuModel::readTexture(char *filename)
  pixel *colorIma;
 
  char testfile[256];
+ char testurl[512];
  sprintf(testfile,"venetus/cache/%s-0-0-0.cmp",filename + strlen("venetus/"));
-	
+ sprintf(testurl,"http://halsted.vis.uky.edu/~baumann/httptest/%s",testfile);
+ // sprintf(testurl,"http://rfbaumann.com/httptest/%s",testfile);
+
  textureFile = filename;
  if(strcmp(filename+(strlen(filename)-strlen("-hi.jpg")),"-hi.jpg") == 0) {
 	 printf("Hi res file\n");
 	 if(access(testfile,R_OK) == 0) {
 		 printf("Using cached mipmap\n");
-		 readCachedMipmap(filename);
+		 readCachedMipmap(filename,0);
 	 }
 	 else {
-		 readImage( filename, colorIma, imaW, imaH );
-		 readTextureSplit(colorIma,filename);
-		 // no sense in keeping the subIma/colorIma around, we don't actually use it
-		 delete[] colorIma;
+		int errval = 0;
+		FILE * cacheFile = fopen(testfile,"w");
+
+		CURL *curl;
+
+		curl = curl_easy_init();
+		if(curl) {
+			curl_easy_setopt(curl, CURLOPT_URL, testurl);
+			curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, cacheFile);
+			errval = curl_easy_perform(curl);
+
+			curl_easy_cleanup(curl);
+		}
+		fclose(cacheFile);
+
+		if(errval == 0) {
+			printf("Using web cached mipmap\n");
+			readCachedMipmap(filename,1);
+		}
+	 	else {
+			readImage( filename, colorIma, imaW, imaH );
+		 	readTextureSplit(colorIma,filename);
+		 	// no sense in keeping the subIma/colorIma around, we don't actually use it
+		 	delete[] colorIma;
+	 	}
 	 }
  }
  else {

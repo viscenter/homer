@@ -98,7 +98,7 @@ class manuModel
 		bool readOBJ(char *filename);
 		void readTexture(char *filename);
 		void readTextureSplit(pixel *colorIma, char * filename);
-		void readCachedMipmap(char * infilename);
+		void readCachedMipmap(char * infilename, int http);
 		
 		void replaceTexture(char *filename);
 		void initTexture( texture *inTexture );

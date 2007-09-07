@@ -505,12 +505,18 @@ int curltest()
 
 	struct MemoryStruct chunk;
 
+	chunk.memory=NULL;
+	chunk.size=0;
+
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	curl = curl_easy_init();
 	if(curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "halsted.vis.uky.edu/~baumann/httptest/pages.xml");
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
 		res = curl_easy_perform(curl);
+		printf("CURL: %d\n", res);
 
 		curl_easy_cleanup(curl);
 	}
