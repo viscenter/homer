@@ -17,6 +17,9 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+#include <sys/stat.h>
+#include <libxml/xmlreader.h>
+
 #include <errno.h>
 #include <dirent.h>
 #include <deque>
@@ -186,6 +189,29 @@ void MyDisplay()
 	}
 	
 	glutSwapBuffers();
+}
+
+void getCacheSize()
+{
+	DIR *pdir;
+	struct dirent *pent;
+	struct stat thisfile;
+	int total_size = 0;
+
+	pdir = opendir("venetus/cache");
+	if(!pdir) {
+		perror("Failed to open directory");
+		exit(1);
+	}
+	chdir("venetus/cache");
+	while(pent = readdir(pdir)) {
+		stat(pent->d_name,&thisfile);
+		// printf("Reading %s: %d bytes\n",pent->d_name, thisfile.st_size);
+		total_size += thisfile.st_size;
+	}
+	chdir("../..");
+	printf("Cache bytes: %d\n", total_size);
+	closedir(pdir);
 }
 
 void getFileNames()
@@ -526,6 +552,27 @@ int curltest()
 		curl_easy_cleanup(curl);
 	}
 
+	xmlTextReaderPtr reader = xmlReaderForMemory(chunk.memory, chunk.size, "noname.xml", NULL, 0);
+	int ret = xmlTextReaderRead(reader);
+	while(ret == 1) {
+		if(xmlTextReaderNodeType(reader) == 1) {
+			printf("Name: %s\n",xmlTextReaderName(reader));
+			if(xmlStrcmp(xmlTextReaderName(reader),BAD_CAST "rdf:Description") == 0) {
+				// printf("URI: %s\n",(char*)xmlTextReaderGetAttribute(reader, BAD_CAST "rdf:about"));
+				char * fileonly = strrchr((char*)(xmlTextReaderGetAttribute(reader, BAD_CAST "rdf:about")),'/');
+				printf("URI: %s\n",fileonly+1);
+				string sfile = (fileonly+1);
+				fileNames.push_back(sfile);
+			}
+			else if(xmlStrcmp(xmlTextReaderName(reader),BAD_CAST "dc:date") == 0) {
+				xmlTextReaderRead(reader);
+				printf("Value: %s\n",xmlTextReaderValue(reader));
+			}
+		}
+		ret = xmlTextReaderRead(reader);
+	}
+	xmlFreeTextReader(reader);
+	/*
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	xmlXPathObjectPtr xpathObj;
@@ -536,15 +583,24 @@ int curltest()
 	}
 	xpathCtx = xmlXPathNewContext(doc);
 	xmlXPathRegisterNs(xpathCtx, BAD_CAST "rdf", BAD_CAST "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+	xmlXPathRegisterNs(xpathCtx, BAD_CAST "dc", BAD_CAST "http://purl.org/dc/elements/1.1/");
 
 	xpathObj = xmlXPathEvalExpression(BAD_CAST "/rdf:RDF/rdf:Description", xpathCtx);
+
+	xmlNodePtr cur = xpathObj->nodesetval->nodeTab[0]; 
+	printf("URI: %s\n", xmlGetProp(cur, BAD_CAST "about"));
+
+	printf("Name: %s\n", cur->children->name);
 
 	xmlXPathFreeObject(xpathObj);
 	xmlXPathFreeContext(xpathCtx);
 	xmlFreeDoc(doc);
+	*/
 
 	if(chunk.memory)
 		free(chunk.memory);
+
+	getCacheSize();
 
 	return 0;
 }
@@ -573,9 +629,9 @@ int main( int argc, char** argv )
 	glutDisplayFunc( MyDisplay );
 	glutKeyboardFunc( MyKeyboard );
 
-	setup_glui();
-	
 	curltest();
+	
+	setup_glui();
 	
 	InitFromFileNames(0);
 
@@ -584,5 +640,5 @@ int main( int argc, char** argv )
 	// glutIdleFunc( Idle );
 	glutMainLoop();
 	
-	return 0;
+return 0;
 }
