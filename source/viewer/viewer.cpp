@@ -197,6 +197,7 @@ void getCacheSize()
 	struct dirent *pent;
 	struct stat thisfile;
 	int total_size = 0;
+	int total_entries = 0;
 
 	pdir = opendir("venetus/cache");
 	if(!pdir) {
@@ -205,10 +206,18 @@ void getCacheSize()
 	}
 	chdir("venetus/cache");
 	while(pent = readdir(pdir)) {
+		printf("Offset: %d\n",telldir(pdir));
 		stat(pent->d_name,&thisfile);
-		// printf("Reading %s: %d bytes\n",pent->d_name, thisfile.st_size);
+		printf("Reading %s: %d bytes\n",pent->d_name, thisfile.st_size);
 		total_size += thisfile.st_size;
+		total_entries++;
 	}
+	rewinddir(pdir);
+	if(total_size > 100000000) {
+		// select a random file
+		// eliminate the entire set of caches for that file
+	}
+
 	chdir("../..");
 	printf("Cache bytes: %d\n", total_size);
 	closedir(pdir);
