@@ -18,6 +18,8 @@
 #include "PhysEnv.h"
 #include "manuModel.h"
 
+#define BASE_URL "http://halsted.vis.uky.edu/~baumann/httptest/"
+
 // Basic Information
 #define PERFORM_ACTION_FALSE                           0
 #define PERFORM_ACTION_TRUE                            1

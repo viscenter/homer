@@ -14,6 +14,8 @@
 #include "cv.h"
 #include "highgui.h"
 
+#include "smc.h"
+
 #include <curl/curl.h>
 
 /*
@@ -100,7 +102,7 @@ bool manuModel::readMesh(char *filename)
 		int errval = 0;
 		FILE * cacheFile = fopen(meshFile,"w");
 		char testurl[512];
-		sprintf(testurl,"http://halsted.vis.uky.edu/~baumann/httptest/%s",meshFile);
+		sprintf(testurl, BASE_URL "%s",meshFile);
 
 		CURL *curl;
 
@@ -657,7 +659,7 @@ void manuModel::readCachedMipmap(char * infilename, int http)
 				if(access(filename,R_OK) != 0) {
 					printf("Downloading %s...",filename);
 					FILE * cacheFile = fopen(filename,"w");
-					sprintf(url, "http://halsted.vis.uky.edu/~baumann/httptest/%s", filename);
+					sprintf(url, BASE_URL "%s", filename);
 					// sprintf(url, "http://rfbaumann.com/httptest/%s", filename);
 					curl_easy_setopt(curl, CURLOPT_URL, url);
 					curl_easy_setopt(curl, CURLOPT_WRITEDATA, cacheFile);
@@ -712,7 +714,7 @@ void manuModel::readTexture(char *filename)
  char testfile[256];
  char testurl[512];
  sprintf(testfile,"venetus/cache/%s-0-0-0.cmp",filename + strlen("venetus/"));
- sprintf(testurl,"http://halsted.vis.uky.edu/~baumann/httptest/%s",testfile);
+ sprintf(testurl, BASE_URL "%s",testfile);
  // sprintf(testurl,"http://rfbaumann.com/httptest/%s",testfile);
 
  textureFile = filename;

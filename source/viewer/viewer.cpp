@@ -543,7 +543,7 @@ int curltest()
 
 	curl = curl_easy_init();
 	if(curl) {
-		curl_easy_setopt(curl, CURLOPT_URL, "halsted.vis.uky.edu/~baumann/httptest/pages.xml");
+		curl_easy_setopt(curl, CURLOPT_URL, BASE_URL "pages.xml");
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
 		res = curl_easy_perform(curl);
