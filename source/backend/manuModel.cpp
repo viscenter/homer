@@ -95,6 +95,31 @@ float max( float first, float second )
 bool manuModel::readMesh(char *filename)
 {	
 	meshFile=filename; 
+	if(access(meshFile, R_OK) != 0) {
+		printf("Downloading mesh...");
+		int errval = 0;
+		FILE * cacheFile = fopen(meshFile,"w");
+		char testurl[512];
+		sprintf(testurl,"http://halsted.vis.uky.edu/~baumann/httptest/%s",meshFile);
+
+		CURL *curl;
+
+		curl = curl_easy_init();
+		if(curl) {
+			curl_easy_setopt(curl, CURLOPT_URL, testurl);
+			curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, cacheFile);
+			errval = curl_easy_perform(curl);
+
+			curl_easy_cleanup(curl);
+		}
+		fclose(cacheFile);
+		printf("done\n");
+
+		if(errval != 0) {
+			return false;			
+		}
+	}
 	FILE* fp = MBopenFile(filename, "r");
 	char * extension = filename+(strlen(filename)-strlen(".obj"));
 	// printf("Extension: %s\n",extension);
