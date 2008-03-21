@@ -18,7 +18,11 @@
 
 #include "glui.h"
 #include "stdinc.h"
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
 
 int *bitmap_arrays[] = {
   glui_img_checkbox_0,
