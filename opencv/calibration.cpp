@@ -153,7 +153,7 @@ int findCorners( IplImage * im, CvSize dim, CvPoint2D32f * corners )
   return count;
 }
 
-int select( const struct dirent * d )
+int myselect( struct dirent * d )
 {
 	return strncmp( d->d_name, "Image", 5 ) == 0;
 }
@@ -162,7 +162,7 @@ int findAllCorners( const char * dir, CvSize dim, CvMat ** points )
 {
 	printf("Finding all corners on %s\n",dir);
 	struct dirent ** files = NULL;
-	int c = scandir( dir, &files, select, alphasort );
+	int c = scandir( dir, &files, myselect, alphasort );
 
 	printf("c: %d\n",c);
   std::vector<CvPoint2D32f *> point_stack;
