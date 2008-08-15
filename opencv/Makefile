@@ -16,5 +16,9 @@ endif
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	LIBS += -L/usr/local/lib -lcv -lcxcore -lhighgui
 endif
+# Mac-specific flags
+ifneq (,$(findstring Darwin,$(UNAME)))
+	LIBS = -lcv -lcxcore -lhighgui
+endif
 
 all: calibration.exe colorstrip.exe thumbprint.exe calibrate2obj.exe diffimage.exe opticalflow.exe opticaltri.exe andimage.exe
