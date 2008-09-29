@@ -25,7 +25,7 @@ using namespace std;
 
 bool countdisplay = true, screenshot = false, springs = false, vertices = false;
 
-bool auto_start = true, auto_quit = true;
+bool auto_start = true, auto_quit = true, use_display = true;
 
 string output_filename, integrator;
 int output_width, output_height;
@@ -38,7 +38,7 @@ int mouseX = 0, mouseY = 0;
 float TotalTime = 0.0f;
 float time_limit;
 
-void init(char *meshfile, char *texturefile, char *scriptfile)
+void GLinit(void)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glShadeModel(GL_SMOOTH);
@@ -52,7 +52,10 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	glPointSize(8.0f);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_LIGHTING);
-	
+}
+
+void init(char *meshfile, char *texturefile, char *scriptfile)
+{
 	performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DEFINE_MESH_TYPE, PERFORM_ACTION_FALSE );
 	
@@ -162,6 +165,11 @@ void Toggle_Mouse(bool enable) {
 		glutMouseFunc( NULL );
 		glutMotionFunc( NULL );
 	}
+}
+
+void Save_Mesh()
+{
+	printf("Saving mesh\n");
 }
 
 void Take_Screenshot()
@@ -311,6 +319,8 @@ int main( int argc, char** argv )
 			"don't automatically play script file")
 		("no-auto-quit,q",
 			"don't automatically quit after screenshot")
+		("no-display,d",
+		 "don't display window during flattening")
 		;
 
 	po::options_description hidden("Hidden options");
@@ -352,6 +362,9 @@ int main( int argc, char** argv )
 	if(vm.count("no-auto-quit")) {
 		auto_quit = false;
 	}
+	if(vm.count("no-display")) {
+		use_display = false;
+	}
 
 	if(time_limit) {
 		screenshot = true;
@@ -361,21 +374,46 @@ int main( int argc, char** argv )
 	output_width = atoi(output_geometry.substr(0,(int)x_position).c_str());
 	output_height = atoi(output_geometry.substr((int)x_position + 1).c_str());
 
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-	glutCreateWindow( "Scroll Manipulation Toolkit" );
-
 	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
+	
+	if(use_display) {
+		glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+		glutCreateWindow( "Scroll Manipulation Toolkit" );
 
-	glutDisplayFunc( Display );
-	glutReshapeFunc( ReshapeCanvas );
-	glutKeyboardFunc( Keyboard );
-	if(!auto_start) {
-		Toggle_Mouse(true);
+		GLinit();
+
+		glutDisplayFunc( Display );
+		glutReshapeFunc( ReshapeCanvas );
+		glutKeyboardFunc( Keyboard );
+		if(!auto_start) {
+			Toggle_Mouse(true);
+		}
+
+		Print_Controls();
+		
+		// glutIdleFunc( Idle );
+		glutMainLoop();
+	}
+	else {
+		while(1) {
+			RunSim();
+
+			if(time_limit && screenshot) {
+				if(TotalTime > time_limit) {
+					printf("Time limit reached\n");
+					Save_Mesh();
+					screenshot = false;	
+					break;
+				}
+			}
+			else if(screenshot) {
+				printf("Flattening stable\n");
+				Save_Mesh();	
+				screenshot = false;
+				break;
+			}
+		}		
 	}
 
-	Print_Controls();
-	
-	// glutIdleFunc( Idle );
-	glutMainLoop();
 	return 0;
 }
