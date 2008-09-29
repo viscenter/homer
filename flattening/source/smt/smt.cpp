@@ -54,7 +54,7 @@ void GLinit(void)
 	glDisable(GL_LIGHTING);
 }
 
-void init(char *meshfile, char *texturefile, char *scriptfile)
+void init(char *meshfile, char *texturefile, char *scriptfile, char *outmeshfile)
 {
 	performAction( PERFORM_ACTION_DEBUG, PERFORM_ACTION_TRUE );
 	performAction( PERFORM_ACTION_DEFINE_MESH_TYPE, PERFORM_ACTION_FALSE );
@@ -62,6 +62,7 @@ void init(char *meshfile, char *texturefile, char *scriptfile)
 	LoadFilename( meshfile, 0 ); // meshFilename
 	LoadFilename( texturefile, 1 ); // textureFilename
 	LoadFilename( scriptfile, 3 ); // scriptFilename
+	LoadFilename( outmeshfile, 4 ); // saveMeshFilename
 	
 	Init();
 
@@ -170,6 +171,9 @@ void Toggle_Mouse(bool enable) {
 void Save_Mesh()
 {
 	printf("Saving mesh\n");
+	
+	performAction( PERFORM_ACTION_SAVE_MESH_FILE, PERFORM_ACTION_TRUE );
+	performAction( PERFORM_ACTION_SET_RUNNING, PERFORM_ACTION_FALSE );
 }
 
 void Take_Screenshot()
@@ -290,7 +294,7 @@ void Keyboard( unsigned char value, int x, int y )
 
 int main( int argc, char** argv )
 {
-	string mesh_file, image_file, script_file, output_geometry;
+	string mesh_file, image_file, script_file, output_geometry, output_mesh_filename;
 	
 	width = WINDOW_WIDTH;
 	height = WINDOW_HEIGHT;
@@ -305,6 +309,9 @@ int main( int argc, char** argv )
 		("output,o",
 		 	po::value<string>(&output_filename)->default_value("output.png"),
 			"output image file")
+		("output-mesh,p",
+		 	po::value<string>(&output_mesh_filename)->default_value("output_mesh.surfref"),
+			"output mesh file")
 		("output-geometry,g",
 		 	po::value<string>(&output_geometry)->default_value("2048x2048"),
 			"output image file geometry in WxH format")
@@ -374,7 +381,7 @@ int main( int argc, char** argv )
 	output_width = atoi(output_geometry.substr(0,(int)x_position).c_str());
 	output_height = atoi(output_geometry.substr((int)x_position + 1).c_str());
 
-	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str());
+	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str(), (char*)output_mesh_filename.c_str());
 	
 	if(use_display) {
 		glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
