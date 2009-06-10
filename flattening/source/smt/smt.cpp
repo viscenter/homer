@@ -381,13 +381,13 @@ int main( int argc, char** argv )
 	output_width = atoi(output_geometry.substr(0,(int)x_position).c_str());
 	output_height = atoi(output_geometry.substr((int)x_position + 1).c_str());
 
-	init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str(), (char*)output_mesh_filename.c_str());
-	
 	if(use_display) {
 		glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 		glutCreateWindow( "Scroll Manipulation Toolkit" );
 
 		GLinit();
+
+		init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str(), (char*)output_mesh_filename.c_str());
 
 		glutDisplayFunc( Display );
 		glutReshapeFunc( ReshapeCanvas );
@@ -402,6 +402,7 @@ int main( int argc, char** argv )
 		glutMainLoop();
 	}
 	else {
+		init((char *)mesh_file.c_str(),	(char *)image_file.c_str(), (char *)script_file.c_str(), (char*)output_mesh_filename.c_str());
 		while(1) {
 			RunSim();
 
