@@ -31,7 +31,7 @@ using namespace TUIO;
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
-#define DETACHED_CONTROLS 0
+#define DETACHED_CONTROLS 1
 #define CACHE_BUTTON 1
 float x=0.0,y=0.0,z=0.0; 
 float previousZ=0.0;  // stores the last value of z
