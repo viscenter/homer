@@ -1,0 +1,53 @@
+8
+
+dir
+1035
+svn+ssh://halsted/var/lib/svnroot/multitouchViewer/source/TUIO/ip/posix
+svn+ssh://halsted/var/lib/svnroot
+
+
+
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+5f4161f8-d2e0-4071-b7a4-fd1397524130
+
+UdpSocket.cpp
+file
+
+
+
+
+2009-06-19T18:45:02.000000Z
+53b41c68d5dbf5f0c9e98f5bb4e9c872
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+NetworkingUtils.cpp
+file
+
+
+
+
+2009-06-19T18:45:02.000000Z
+0f1d67381705b8b69f5a1bd7205cdebd
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+

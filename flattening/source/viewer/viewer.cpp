@@ -19,7 +19,13 @@
 
 #include <iostream>
 #include <string>
+#include <cmath>
+#include "viewer.h"
+#include "TuioClient.h"
+#include "MyTuioListener.h"
+
 using namespace std;
+using namespace TUIO;
 
 #include "smc.h"
 #define WINDOW_WIDTH 800
@@ -27,15 +33,19 @@ using namespace std;
 
 #define DETACHED_CONTROLS 0
 #define CACHE_BUTTON 1
-
+float x=0.0,y=0.0,z=0.0; 
+float previousZ=0.0;  // stores the last value of z
 float xy_aspect;
 float view_rotate[16] = { 0.776922,-0.418051,0.470771,0, -0.038177,0.715077,0.698002,0, -0.628438,-0.560266,0.539599,0, 0,0,0,1 };
 // float view_rotate[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
 float initial_obj_pos[] = { 1.48, 0.685, 8.964999 };
-float obj_pos[] = { 0.0, 0.0, 0.0 };
+float obj_pos[3] = { 0.0, 0.0, 0.0 };
 int	  show_vertices = 0;
 int	  show_springs = 0;
 float flattening = 0;
+TuioClient client;
+
+
 
 GLUI *glui;
 GLUI_Listbox *fileBox;
@@ -507,7 +517,11 @@ int main( int argc, char** argv )
 	InitFromFileNames(0);
 
 	update_once();
-
+  //TUIO Part   
+   TuioListener* listener = new MyTuioListener();
+   client.addTuioListener(listener);
+   client.connect(false);  
+  //
 	// glutIdleFunc( Idle );
 	glutMainLoop();
 	
