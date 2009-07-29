@@ -90,7 +90,7 @@ BACKENDSOURCES	:=	source/backend source/glee source/glui
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
-TUIOSOURCES   	:=	source/TUIO
+TUIOSOURCES   	:=	source/TUIO source/TUIO/ip source/TUIO/ip/posix source/TUIO/osc 
 INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES) $(TUIOSOURCES)
 
 CFLAGS		+= $(INCLUDE)
@@ -116,6 +116,7 @@ VIEWERCPPFILES		:=	$(foreach dir,$(VIEWERSOURCES),$(notdir $(wildcard $(dir)/*.c
 SMTJAVACPPFILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 
 SMTJAVAJAVAILES	:=	$(foreach dir,$(SMTJAVASOURCES),$(notdir $(wildcard $(dir)/*.java)))
+TUIOCPPFILES	:=	$(foreach dir,$(TUIOSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 
 # Use CXX for linking
 export LD	:=	$(CXX)
@@ -123,8 +124,9 @@ export LD	:=	$(CXX)
 export BACKENDOFILES	:=	$(BACKENDCPPFILES:.cpp=.o) \
 							$(BACKENDCFILES:.c=.o)
 export SMTOFILES		:=	$(SMTCPPFILES:.cpp=.o)
+export TUIOOFILES		:=	$(TUIOCPPFILES:.cpp=.o)
 export VIEWEROFILES		:=	$(VIEWERCPPFILES:.cpp=.o)
-export TUIOLIBFILES		:=	../$(TUIOSOURCES)/libTUIO.a
+# export TUIOLIBFILES		:=	../$(TUIOSOURCES)/libTUIO.a
 export SMTJAVAOFILES	:=	$(SMTJAVACPPFILES:.cpp=.o)
 export SMTJAVACLASSFILES	:=	$(SMTJAVACPPFILES:.java=.class)
 
@@ -158,17 +160,18 @@ else # in build directory
 
 DEPENDS	:=	$(BACKENDOFILES:.o=.d) \
 			$(SMTOFILES:.o=.d) \
+			$(TUIOOFILES:.o=.d) \
 #			$(SMTJAVAOFILES:.o=.d)
 
 all: $(BUILDBINS)
 #all: $(SMTBIN) $(VIEWERBIN)
 #smtjava
 
-$(SMTBIN): $(BACKENDOFILES) $(SMTOFILES)
+$(SMTBIN): $(BACKENDOFILES) $(SMTOFILES) $(TUIOOFILES)
 	$(LD) $(LDFLAGS) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
 
-$(VIEWERBIN): $(BACKENDOFILES) $(VIEWEROFILES)
-	$(LD) $(LDFLAGS) $(VIEWEROFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@ $(TUIOLIBFILES)
+$(VIEWERBIN): $(BACKENDOFILES) $(VIEWEROFILES) $(TUIOOFILES)
+	$(LD) $(LDFLAGS) $(TUIOOFILES) $(VIEWEROFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@ $(TUIOLIBFILES)
 
 
 # .PHONY: smtjava
