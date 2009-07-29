@@ -53,7 +53,7 @@ endif
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
-	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++ -lws2_32 -lwsock32 -lwinmm
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++ -lws2_32 -lwsock32 -lwinmm -lpthreadGC2
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	+=	-DWIN32 -I/usr/local/include/opencv -I/usr/include/boost-1_33_1
 	CFLAGS += -mno-cygwin
@@ -91,7 +91,7 @@ SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
 TUIOSOURCES   	:=	source/TUIO source/TUIO/ip source/TUIO/ip/win32 source/TUIO/osc 
-INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES) $(TUIOSOURCES)
+INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES) $(TUIOSOURCES) source/pthreads
 
 CFLAGS		+= $(INCLUDE)
 CXXFLAGS	:= $(CFLAGS)
