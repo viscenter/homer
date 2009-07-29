@@ -1,0 +1,126 @@
+8
+
+dir
+1035
+svn+ssh://halsted/var/lib/svnroot/multitouchViewer
+svn+ssh://halsted/var/lib/svnroot
+
+
+
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+5f4161f8-d2e0-4071-b7a4-fd1397524130
+
+highgui100.dll
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+d3e159a9cef48112caa5563408b16b88
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+
+source
+dir
+
+libguide40.dll
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+e6fbcd1a1818911cc6335c0473d8ab17
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+
+.gitignore
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+c89e98784eb6baede0319e1bcc2665af
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+data
+dir
+
+venetus
+dir
+
+glut32.dll
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+8ea55ba51f158b053db48e7a8f481f40
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+
+makefile
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+39a436edb288e2611bd94175c052835c
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+cxcore100.dll
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+3a32f6154f3f0132fbd44fa54bac72ac
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+
+smtjava.sh
+file
+
+
+
+
+2009-06-19T18:45:25.000000Z
+2b7e7df262f6818fb446046d7c94efe3
+2009-06-19T18:43:37.340311Z
+1035
+jose
+has-props
+

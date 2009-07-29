@@ -1,0 +1,49 @@
+8
+
+dir
+1035
+svn+ssh://halsted/var/lib/svnroot/multitouchViewer/source
+svn+ssh://halsted/var/lib/svnroot
+
+
+
+2009-06-19T18:43:37.340311Z
+1035
+jose
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+5f4161f8-d2e0-4071-b7a4-fd1397524130
+
+TUIO
+dir
+
+glui
+dir
+
+viewer
+dir
+
+smt
+dir
+
+smtjava
+dir
+
+backend
+dir
+
+glee
+dir
+
