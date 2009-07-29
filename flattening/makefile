@@ -53,7 +53,7 @@ endif
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	SMTOUT	:= smt.exe
 	VIEWEROUT	:= viewer.exe
-	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
+	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++ -lws2_32 -lwsock32 -lwinmm
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
 	CFLAGS	+=	-DWIN32 -I/usr/local/include/opencv -I/usr/include/boost-1_33_1
 	CFLAGS += -mno-cygwin
@@ -90,7 +90,7 @@ BACKENDSOURCES	:=	source/backend source/glee source/glui
 SMTSOURCES		:=	source/smt
 VIEWERSOURCES		:=	source/viewer
 SMTJAVASOURCES	:=	source/smtjava
-TUIOSOURCES   	:=	source/TUIO source/TUIO/ip source/TUIO/ip/posix source/TUIO/osc 
+TUIOSOURCES   	:=	source/TUIO source/TUIO/ip source/TUIO/ip/win32 source/TUIO/osc 
 INCLUDES		+=	$(BACKENDSOURCES) $(SMTSOURCES) $(VIEWERSOURCES) $(SMTJAVASOURCES) $(TUIOSOURCES)
 
 CFLAGS		+= $(INCLUDE)
@@ -107,7 +107,8 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 export VPATH	:=	$(foreach dir,$(BACKENDSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(SMTSOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(VIEWERSOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir))
+					$(foreach dir,$(SMTJAVASOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(TUIOSOURCES),$(CURDIR)/$(dir))
 
 BACKENDCPPFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 BACKENDCFILES	:=	$(foreach dir,$(BACKENDSOURCES),$(notdir $(wildcard $(dir)/*.c)))
@@ -168,7 +169,7 @@ all: $(BUILDBINS)
 #smtjava
 
 $(SMTBIN): $(BACKENDOFILES) $(SMTOFILES) $(TUIOOFILES)
-	$(LD) $(LDFLAGS) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(TUIOOFILES) $(SMTOFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@
 
 $(VIEWERBIN): $(BACKENDOFILES) $(VIEWEROFILES) $(TUIOOFILES)
 	$(LD) $(LDFLAGS) $(TUIOOFILES) $(VIEWEROFILES) $(BACKENDOFILES) $(LIBPATHS) $(LIBS) -o $@ $(TUIOLIBFILES)
