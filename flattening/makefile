@@ -55,9 +55,9 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 	VIEWEROUT	:= viewer.exe
 	LIBS	:=	-lboost_program_options-gcc-mt -lhighgui -lcv -lcxcore -lopengl32 -lglu32 -lglut32 -lstdc++
 	JNILDFLAGS	:=	-Wl,--add-stdcall-alias -shared
-	CFLAGS	+=	-DWIN32 -I/usr/include/opencv -I/usr/include/boost-1_33_1
-	# CFLAGS += -mno-cygwin
-	# LDFLAGS +=  -mno-cygwin
+	CFLAGS	+=	-DWIN32 -I/usr/local/include/opencv -I/usr/include/boost-1_33_1
+	CFLAGS += -mno-cygwin
+	LDFLAGS +=  -mno-cygwin
 	JDK		:=	/cygdrive/c/j2sdk1.4.2_10
 	JAVAGL	:= JavaGL.dll
 	JAVAINCLUDE	:=	-I$(JDK)/include -I$(JDK)/include/win32
