@@ -43,10 +43,8 @@ float obj_pos[3] = { 0.0, 0.0, 0.0 };
 int	  show_vertices = 0;
 int	  show_springs = 0;
 float flattening = 0;
-
-GLUI_Rotation *view_rot=NULL;
 TuioClient client;
-pthread_mutex_t queue_mutex  = PTHREAD_MUTEX_INITIALIZER;
+
 
 
 GLUI *glui;
@@ -393,44 +391,10 @@ void MyReshapeCanvas( int width, int height )
 
 void MyGlutIdle( void )
 {
-             //cerr<<"w="<<view_rot->w<<" h="<<view_rot->h<<endl;                        /* dimensions of control */
-             //cerr<<"x_abs="<<view_rot->x_abs<<" y_abs="<<view_rot->y_abs<<endl;
-             //cerr<<"x_off="<<view_rot->x_off<<" y_off_top="<<view_rot->y_off_top<<" y_off_bot="<<view_rot->y_off_bot<<endl;
 	if(glutGetWindow() != main_window) {
 		glutSetWindow(main_window);
 	}
 
-        pthread_mutex_lock(&queue_mutex);
-        while(!mouseEvents.empty())
-        {
-         XY event = mouseEvents.front();
-         mouseEvents.pop();
-         pthread_mutex_unlock(&queue_mutex);
-        // cerr<<"X="<<event.X<<"Y="<< event.Y<<endl;
-          switch( event.mouseState )
-          {
-          
-           case mouseDown:             
-          //    cerr<<"mouseDown"<<endl; // errase this
-              view_rot->mouse_down_handler(event.X, event.Y); //event.X+view_rot->x_abs, event.Y );
-              break;
-             
-           case mouseHeldDown:             
-            //  cerr<<"mouseHeldDown"<<endl; // errase this
-              view_rot->mouse_held_down_handler( event.X, event.Y,  1 );
-              break;
-             
-           case mouseUp:            
-              //cerr<<"mouseUp"<<endl; // errase this
-              view_rot->mouse_up_handler(  event.X, event.Y,  1 );
-              break;
-             
-           default:            
-              break;                     
-          }
-         pthread_mutex_lock(&queue_mutex);
-      }
-      pthread_mutex_unlock(&queue_mutex);
 	glutPostRedisplay();
 }
 
@@ -474,7 +438,7 @@ void setup_glui(void)
 	
 	//*****Control spheres for rotation, translation, and zoom controls********
  
-  view_rot = glui->add_rotation( "Rotate", view_rotate );
+  GLUI_Rotation *view_rot = glui->add_rotation( "Rotate", view_rotate );
   view_rot->set_spin( 1.0 );
 
   GLUI_Translation *trans_xy = 
