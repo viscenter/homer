@@ -5,6 +5,7 @@
 #include "glui.h"
 #include <queue>
 #include <map>
+#include <pthread.h>
  
  enum state  {mouseDown, mouseHeldDown, mouseUp};  
  struct XY // contains the x and y cordinates for the rotation part 
@@ -30,7 +31,7 @@ extern bool  ZoomState;  // "True" if there are 2 active cursors, "False" oherwi
 extern bool  RotState;   // "True" if there is 1 active cursor, "False" oherwise
 extern GLUI_Rotation *view_rot; 
 extern std::queue<XY> mouseEvents;
-// extern pthread_mutex_t queue_mutex;
+extern pthread_mutex_t queue_mutex;
          
 
 #endif
