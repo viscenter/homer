@@ -23,6 +23,7 @@ bool manuModel::readOBJ( char * filename )
 	std::vector<tVector> textureoffsets;
 	std::vector<VertexGroup> groups;
 	std::vector<Triangle> trigroups;
+	std::vector<Triangle> texgroups;
 	std::streampos rewind;
 
 	std::ifstream objfile(filename);
@@ -33,11 +34,11 @@ bool manuModel::readOBJ( char * filename )
 		return false;
 	}
 
-	// Read in all vertices
-	// Lines begin with v
 	while(!objfile.eof()) {
 		rewind = objfile.tellg();
 		getline(objfile,line);
+		// Read in vertices
+		// Lines begin with v
 		if((line[0] == 'v') && (line[1] == ' ')) {
 			tVector thispoint;
 			std::stringstream linereader;
@@ -45,20 +46,9 @@ bool manuModel::readOBJ( char * filename )
 			linereader >> ignore >> thispoint.x >> thispoint.y >> thispoint.z;
 			vertices.push_back(thispoint);
 		}
-		else if((line[0] != '#') && (line[0] != 'g')) {
-			break;
-		}
-	}
-
-	objfile.clear();
-	objfile.seekg(rewind);
-
-	// Read in all texture offsets
-	// Lines begin with vt
-	while(!objfile.eof()) {
-		rewind = objfile.tellg();
-		getline(objfile,line);
-		if((line[0] == 'v') && (line[1] == 't')) {
+		// Read in texture offsets
+		// Lines begin with vt
+		else if((line[0] == 'v') && (line[1] == 't')) {
 			tVector thisoffset;
 			std::stringstream linereader;
 			linereader << line;
@@ -67,9 +57,31 @@ bool manuModel::readOBJ( char * filename )
 			thisoffset.v = 1.0 - thisoffset.v;
 			textureoffsets.push_back(thisoffset);
 		}
-		else if(line[0] != '#') {
-			break;
+		// Read in triangles
+		// Lines begin with f
+		else if((line[0] == 'f') && (line[1] == ' ')) {
+			int v1,t1,v2,t2,v3,t3;
+			if( sscanf(line.c_str(),
+						"f %d/%d %d/%d %d/%d",&v1,&t1,&v2,&t2,&v3,&t3) == 6 ||
+					sscanf(line.c_str(),
+						"f %d/%d/%*d %d/%d/%*d %d/%d/%*d",&v1,&t1,&v2,&t2,&v3,&t3) == 6)
+			{
+				Triangle thistri;
+				thistri.idx1 = v1-1;
+				thistri.idx2 = v2-1;
+				thistri.idx3 = v3-1;
+				trigroups.push_back(thistri);
+				
+				thistri.idx1 = t1-1;
+				thistri.idx2 = t2-1;
+				thistri.idx3 = t3-1;
+				texgroups.push_back(thistri);
+			}
 		}
+		// This is kind of dangerous, but let's ignore bad/unknown formatting
+		//else if((line[0] != '#') && (line[0] != 'g')) {
+		//	break;
+		//}
 	}	
 	
 	// We now have vertices and texture offsets, copy them
@@ -88,81 +100,19 @@ bool manuModel::readOBJ( char * filename )
 	}
 	if( SMT_DEBUG ) printf("Read in %i Vertices \n", nVer );
 		
-	objfile.clear();
-	objfile.seekg(rewind);
-	
-	// Construct groups
-	// Read g for name, look for map_Kd on next line, read all f %d/%d lines 
-	// (ignoring comments) until we hit something else
-	while(!objfile.eof()) {
-		getline(objfile,line);
-		if((line[0] == 'g') && (line[1] == ' ')) {
-			VertexGroup thisgroup;
-			thisgroup.texName = "untextured";
-			char * namebuf = (char *)calloc(BUF_SIZE,sizeof(char));
-			sscanf(line.c_str(),"g %s",namebuf);
-			thisgroup.groupName = std::string(namebuf);
-			
-			getline(objfile,line);
-			if(line.find("map_Kd",0) == 0) {
-				sscanf(line.c_str(),"map_Kd %s",namebuf);
-				thisgroup.texName = std::string(namebuf);
-			}
-			free(namebuf);
-			
-			// we now have the texture for this group, read triangles
-			bool readingtriangles = true;
-			while((!objfile.eof()) && readingtriangles) {
-				rewind = objfile.tellg();
-				getline(objfile,line);
-				if((line[0] == 'f') && (line[1] == ' ')) {
-					int v1,t1,v2,t2,v3,t3;
-					sscanf(line.c_str(),"f %d/%d %d/%d %d/%d",&v1,&t1,&v2,&t2,&v3,&t3);
-
-					Triangle thistri;
-					thistri.idx1 = v1-1;
-					thistri.idx2 = v2-1;
-					thistri.idx3 = v3-1;
-					trigroups.push_back(thistri);
-					
-					verList[v1-1].u1 = textureoffsets[t1-1].u;
-					verList[v1-1].v1 = textureoffsets[t1-1].v;
-					
-					verList[v2-1].u1 = textureoffsets[t2-1].u;
-					verList[v2-1].v1 = textureoffsets[t2-1].v;
-
-					verList[v3-1].u1 = textureoffsets[t3-1].u;
-					verList[v3-1].v1 = textureoffsets[t3-1].v;
-
-					// printf("f %d/%d %d/%d %d/%d\n",v1,t1,v2,t2,v3,t3);
-					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v1-1]),&(textureoffsets[t1-1])));
-					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v2-1]),&(textureoffsets[t2-1])));
-					thisgroup.vertices.push_back(std::pair<tVector *, tVector *>(&(vertices[v3-1]),&(textureoffsets[t3-1])));
-					
-					/*
-					printf("%f,%f,%f\t%f,%f\n",
-							thisgroup.vertices.back().first.x,
-							thisgroup.vertices.back().first.y,
-							thisgroup.vertices.back().first.z,
-							thisgroup.vertices.back().second.u,
-							thisgroup.vertices.back().second.v);
-					*/
-				}
-				else if(line[0] != '#') {
-					// not a triangle or a comment, go on to the next group
-					readingtriangles = false;
-					objfile.seekg(rewind);
-				}
-			}
-			groups.push_back(thisgroup);
-		}
-	}
-
 	nTrig = trigroups.size();
 	trigList = new Triangle[nTrig];
 
 	for(unsigned int i = 0; i < nTrig; i++) {
 		trigList[i] = trigroups[i];
+
+		// Re-index textures, since their indices may not match vertices
+		verList[trigroups[i].idx1].u1 = textureoffsets[texgroups[i].idx1].u;
+		verList[trigroups[i].idx1].v1 = textureoffsets[texgroups[i].idx1].v;
+		verList[trigroups[i].idx2].u1 = textureoffsets[texgroups[i].idx2].u;
+		verList[trigroups[i].idx2].v1 = textureoffsets[texgroups[i].idx2].v;
+		verList[trigroups[i].idx3].u1 = textureoffsets[texgroups[i].idx3].u;
+		verList[trigroups[i].idx3].v1 = textureoffsets[texgroups[i].idx3].v;
 	}
 	if( SMT_DEBUG ) printf("Read in %i Triangles \n", nTrig );
 

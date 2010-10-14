@@ -203,7 +203,7 @@ void getFileNames()
 				if((file.compare(file.length()-8,3,"-lo") == 0) || (file.compare(file.length()-7,3,"-lo") == 0)) {
 					fileNames.push_front(file);
 				}
-				else if(/*(texsize > 2048) && */((file.compare(file.length()-8,3,"-hi") == 0) || (file.compare(file.length()-7,3,"-hi") == 0))) {
+				else {
 					fileNames.push_back(file);
 				}
 			}
@@ -228,6 +228,10 @@ void InitFromFileNames(int pos) {
 	}
 	else {
 		corresponding_image.replace(corresponding_image.end()-4,corresponding_image.end(),".jpg");
+	}
+	// Look for jpg first, then try png
+	if(access((directory+corresponding_image).c_str(), R_OK) != 0) {
+		corresponding_image.replace(corresponding_image.end()-4,corresponding_image.end(),".png");
 	}
 	// printf( "%s\n", selected_file.c_str() );
 	// printf( "%s\n", corresponding_image.c_str() );

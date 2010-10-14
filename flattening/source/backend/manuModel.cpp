@@ -27,7 +27,7 @@ GLint TEXH;
 
 void errtest(const char * file, const int line, const char * fun)
 {
-	char * nodir = strrchr(file,'/')+1;
+	const char * nodir = strrchr(file,'/')+1;
 	GLint errval = glGetError();
 	if(errval) {
 		printf("Error at %s:%d\t%s\n",nodir,line,gluErrorString(errval));
@@ -66,19 +66,21 @@ manuModel::~manuModel()
 	if( trigList != NULL ) delete[] trigList;
 	if( originalList != NULL ) delete[] originalList;
 	
-	texture *next = firstTexture->nextTexture;
-	delete[] firstTexture->ima;
-	glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
-	// delete firstTexture->subIma;
-	delete firstTexture;
-	while( next != NULL )
-	{
-		currentTexture = next;
-		next = currentTexture->nextTexture;
-		delete[] currentTexture->ima;
-		glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
-		// delete currentTexture->subIma;
-		delete currentTexture;
+	if( firstTexture ) {
+		texture *next = firstTexture->nextTexture;
+		delete[] firstTexture->ima;
+		glDeleteTextures(1,(GLuint*)(&(firstTexture->id)));
+		// delete firstTexture->subIma;
+		delete firstTexture;
+		while( next != NULL )
+		{
+			currentTexture = next;
+			next = currentTexture->nextTexture;
+			delete[] currentTexture->ima;
+			glDeleteTextures(1,(GLuint*)(&(currentTexture->id)));
+			// delete currentTexture->subIma;
+			delete currentTexture;
+		}
 	}
 }
 
@@ -267,6 +269,8 @@ bool manuModel::readMesh(char *filename)
 	ww = fabs(maxx) + fabs(minx);
 	hh = fabs(maxy) + fabs(miny);
 	dd = fabs(maxz) + fabs(minz);
+	// if the depth is larger than the height, swap axes
+	bool swap_yz = dd > hh ? true : false;
 	
 	/* calculate center of the model */
 	//cx = (maxx + minx) / 2.0;
@@ -298,6 +302,13 @@ bool manuModel::readMesh(char *filename)
 		verList[i].x *= scale;
 		verList[i].y *= scale;
 		verList[i].z *= scale;
+
+		// Swap axes if needed
+		if( swap_yz ) {
+			float tmp = verList[i].y;
+			verList[i].y = verList[i].z;
+			verList[i].z = -tmp;
+		}
 		
 		if (verList[i].x > this->maxx)
 			this->maxx = verList[i].x;
@@ -382,6 +393,12 @@ int manuModel::readImage( char* filename, unsigned char* &image, int &width, int
 	IplImage* cvImage = cvLoadImage(filename);
 	unsigned char* data;
 	int step;
+
+	if( cvImage == NULL ) {
+		image = NULL;
+		height = 0; width = 0;
+		return -1;
+	}
 
 	height = cvImage->height;
 	width = cvImage->width;
@@ -666,18 +683,10 @@ void manuModel::readTexture(char *filename)
  sprintf(testfile,"venetus/cache/%s-0-0-0.cmp",filename + strlen("venetus/"));
 	
  textureFile = filename;
- if(strcmp(filename+(strlen(filename)-strlen("-hi.jpg")),"-hi.jpg") == 0) {
-	 printf("Hi res file\n");
-	 if(access(testfile,R_OK) == 0) {
-		 printf("Using cached mipmap\n");
-		 readCachedMipmap(filename);
-	 }
-	 else {
-		 readImage( filename, colorIma, imaW, imaH );
-		 readTextureSplit(colorIma,filename);
-		 // no sense in keeping the subIma/colorIma around, we don't actually use it
-		 delete[] colorIma;
-	 }
+ if(access(testfile,R_OK) == 0) {
+   printf("Hi res file\n");
+   printf("Using cached mipmap\n");
+   readCachedMipmap(filename);
  }
  else {
 	 readImage( filename, colorIma, imaW, imaH );
@@ -883,6 +892,8 @@ void manuModel::initTexture( texture *inTexture )
 
 void manuModel::BindNextTexture()
 {
+	if( currentTexture == NULL ) return;
+
 	texture *next = currentTexture->nextTexture;
 	if( next == NULL ) next = firstTexture;
 	
